@@ -1,0 +1,30 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is in .gitignore and never committed:
+# this repository is public and carries no owner, repository or subscription values.
+#
+# The subscription comes from the ARM_SUBSCRIPTION_ID environment variable,
+# which infra.yml sets from the AZURE_SUBSCRIPTION_ID repository variable.
+#
+# The stage also selects the state file, so init needs it as well:
+#
+#   terraform init -backend-config="key=herald-dev.tfstate"
+#   terraform plan
+#
+# A terraform.tfvars that says dev next to an init that says prd would plan dev resources against
+# the prd state, so keep the two in step - or pass -var="environment=..." and skip the file.
+
+# Stage: dev or prd. Required, no default.
+environment = "dev"
+
+# Commit SHA of the infrastructure state, written to the version tag of every resource.
+# infra.yml passes this as -var, so it is normally not set in a file.
+revision = ""
+
+# Optional, all have defaults:
+# workload               = "herald"
+# location               = "germanywestcentral"
+# location_short         = "gwc"
+# instance               = "001"
+# herald_mode            = "Dry"
+# maximum_instance_count = 40
+# instance_memory_in_mb  = 2048
+# log_retention_in_days  = 60

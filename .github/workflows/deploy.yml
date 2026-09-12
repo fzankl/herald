@@ -1,0 +1,121 @@
+name: deploy
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Commit SHA to deploy. Use the SHA of the last green run to roll back.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    # workflow_run fires for failed runs too, so the conclusion has to be checked explicitly. Its
+    # branches filter matches the branch name of the triggering run, which a pull request from a fork
+    # can also call main, so the triggering event has to be a push as well.
+    # DEPLOY_ENABLED is the same switch as in infra.yml, and dev and prd are skipped with this job.
+    if: >-
+      vars.DEPLOY_ENABLED == 'true'
+      && (github.event_name == 'workflow_dispatch'
+        || (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'))
+
+    outputs:
+      deploy: ${{ steps.changed.outputs.deploy }}
+      sha: ${{ steps.changed.outputs.sha }}
+      run_id: ${{ steps.run.outputs.id }}
+
+    env:
+      DEPLOY_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.sha || github.event.workflow_run.head_sha }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+          # The parent commit is needed to see what changed; the default depth of 1 does not have it.
+          fetch-depth: 2
+
+      # Only a change under src/ or build/ can change the artifact. Everything else that lands on
+      # main - documentation, deploy/, workflows - leaves the deployed code untouched.
+      - name: Decide whether the code changed
+        id: changed
+        run: |
+          echo "sha=${DEPLOY_SHA}" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git rev-parse --verify "${DEPLOY_SHA}^" >/dev/null 2>&1; then
+            range="${DEPLOY_SHA}^ ${DEPLOY_SHA}"
+          else
+            range="${DEPLOY_SHA}"
+          fi
+          if git diff --name-only ${range} | grep -qE '^(src|build)/'; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "no change under src/ or build/, nothing to deploy"
+          fi
+
+      # A manual run deploys an older commit, whose artifact belongs to that commit's own ci run and
+      # not to the run that triggered this one. That is the rollback path, so it has to be looked up.
+      - name: Resolve the ci run holding the artifact
+        id: run
+        if: steps.changed.outputs.deploy == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "${{ github.event_name }}" != "workflow_dispatch" ]]; then
+            echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          id="$(gh run list --workflow ci.yml --branch main --limit 100 \
+            --json databaseId,headSha,conclusion \
+            --jq "[.[] | select(.headSha == \"${DEPLOY_SHA}\" and .conclusion == \"success\")][0].databaseId")"
+          if [[ -z "${id}" || "${id}" == "null" ]]; then
+            echo "no successful ci run found for ${DEPLOY_SHA}" >&2
+            exit 1
+          fi
+          echo "id=${id}" >> "$GITHUB_OUTPUT"
+
+  # The same artifact goes to both stages, dev first. prd only runs once dev has been deployed and
+  # smoke-tested, so a broken build is caught on dev before a reviewer is asked to approve prd.
+  dev:
+    needs: prepare
+    if: needs.prepare.outputs.deploy == 'true'
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      environment: dev
+      sha: ${{ needs.prepare.outputs.sha }}
+      run_id: ${{ needs.prepare.outputs.run_id }}
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
+
+  prd:
+    needs: [prepare, dev]
+    if: needs.prepare.outputs.deploy == 'true'
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      environment: prd
+      sha: ${{ needs.prepare.outputs.sha }}
+      run_id: ${{ needs.prepare.outputs.run_id }}
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      actions: read

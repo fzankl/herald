@@ -1,0 +1,77 @@
+name: infra
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/**'
+      - '.github/workflows/infra.yml'
+      - '.github/workflows/infra-plan.yml'
+      - '.github/workflows/infra-apply.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/**'
+      - '.github/workflows/infra.yml'
+      - '.github/workflows/infra-plan.yml'
+      - '.github/workflows/infra-apply.yml'
+
+permissions:
+  contents: read
+
+# The two stages are the same configuration with a different value for var.environment, and they hold
+# separate state. A pull request plans both for review, a push to main applies both, and each apply
+# plans for itself so that no plan file has to travel between jobs. The applies are ordered: prd only
+# after dev has applied, which is the promotion gate.
+#
+# A pull request from a fork runs with a read-only GITHUB_TOKEN and gets no OIDC token, so it cannot
+# sign in. That holds only while "Send write tokens to workflows from pull requests" stays off. The
+# condition on the plan jobs keeps a fork pull request from showing up as a red run and protects
+# nothing, because a pull request runs the workflow file from its own branch. Fork pull requests are
+# covered by ci.yml.
+jobs:
+  plan-dev:
+    if: vars.DEPLOY_ENABLED == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/infra-plan.yml
+    with:
+      environment: dev
+      herald_mode: ${{ vars.HERALD_MODE_DEV || 'Dry' }}
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+  plan-prd:
+    if: vars.DEPLOY_ENABLED == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/infra-plan.yml
+    with:
+      environment: prd
+      herald_mode: ${{ vars.HERALD_MODE_PRD || 'Dry' }}
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+  apply-dev:
+    if: vars.DEPLOY_ENABLED == 'true' && github.event_name == 'push'
+    uses: ./.github/workflows/infra-apply.yml
+    with:
+      environment: dev
+      herald_mode: ${{ vars.HERALD_MODE_DEV || 'Dry' }}
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+
+  apply-prd:
+    needs: apply-dev
+    if: vars.DEPLOY_ENABLED == 'true' && github.event_name == 'push'
+    uses: ./.github/workflows/infra-apply.yml
+    with:
+      environment: prd
+      herald_mode: ${{ vars.HERALD_MODE_PRD || 'Dry' }}
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write

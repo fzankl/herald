@@ -1,0 +1,83 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # The function project is restored directly and not only through the solution: only a direct
+      # project restore runs the post-restore hook of Azure.Functions.Sdk that generates and
+      # restores obj/azure_functions/azure_functions.g.csproj (AZFW0108).
+      - name: Restore
+        run: |
+          dotnet restore src/Herald.Functions/Herald.Functions.csproj
+          dotnet restore Herald.slnx
+
+      - name: Build
+        run: dotnet build Herald.slnx --no-restore -warnaserror
+
+      - name: Test
+        run: dotnet test Herald.slnx --no-build
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.2
+          terraform_wrapper: false
+
+      - name: Terraform format
+        run: terraform fmt -check -recursive deploy/
+
+      - name: Terraform validate
+        working-directory: deploy
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: v0.64.0
+
+      - name: tflint
+        working-directory: deploy
+        run: |
+          tflint --init
+          tflint --recursive
+
+      - name: Publish
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: >
+          dotnet publish src/Herald.Functions/Herald.Functions.csproj
+          -c Release
+          -o publish/
+          -p:SourceRevisionId=${{ github.sha }}
+
+      - name: Upload publish artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: functions-publish-${{ github.sha }}
+          path: publish/
+          if-no-files-found: error
+          retention-days: 60

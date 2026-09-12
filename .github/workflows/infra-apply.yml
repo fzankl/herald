@@ -1,0 +1,75 @@
+name: infra-apply
+
+# One Terraform plan and apply, for the stage named in the input. infra.yml calls this twice, dev
+# first and prd only after dev succeeded.
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Stage to apply. Names the GitHub environment, the resources and the state file.
+        required: true
+        type: string
+      herald_mode:
+        description: Value for var.herald_mode.
+        required: false
+        default: Dry
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+
+    # Required reviewer on this environment is what makes the apply a deliberate step.
+    environment: ${{ inputs.environment }}
+
+    concurrency:
+      group: terraform-state-${{ inputs.environment }}
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      TF_VERSION: 1.16.2
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_AZUREAD: true
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: deploy
+        run: >
+          terraform init -input=false
+          -backend-config="key=herald-${{ inputs.environment }}.tfstate"
+
+      # The plan is written and applied in the same job, so it never leaves the runner. A saved plan
+      # carries a copy of the prior state in cleartext, and an artifact of a public repository can be
+      # downloaded without authentication. Planning here also means the prd plan is taken after the
+      # dev apply rather than before it.
+      - name: Terraform plan
+        working-directory: deploy
+        run: >
+          terraform plan -input=false -lock-timeout=5m -out=tfplan
+          -var="environment=${{ inputs.environment }}"
+          -var="revision=${{ github.sha }}"
+          -var="herald_mode=${{ inputs.herald_mode }}"
+
+      - name: Terraform apply
+        working-directory: deploy
+        run: terraform apply -input=false -lock-timeout=5m tfplan

@@ -1,0 +1,98 @@
+name: infra-plan
+
+# One Terraform plan for the stage named in the input, for review on 
+# a pull request. infra.yml calls this once per stage.
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Stage to plan. Names the resources and the state file.
+        required: true
+        type: string
+      herald_mode:
+        description: Value for var.herald_mode. The plan decides it, because apply applies this plan.
+        required: false
+        default: Dry
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+
+    # A plan is not a deployment, so this job declares no environment. It signs in as the read-only
+    # plan identity, which keeps the stage identities out of reach of a pull request: a pull request
+    # runs the workflow file from its own branch.
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    env:
+      TF_VERSION: 1.16.2
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_AZUREAD: true
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_PLAN_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: deploy
+        run: >
+          terraform init -input=false
+          -backend-config="key=herald-${{ inputs.environment }}.tfstate"
+
+      # -lock=false because the plan identity may read the state but not lease it. A plan that runs
+      # during an apply can read a state in between, which affects this comment and nothing else.
+      - name: Terraform plan
+        working-directory: deploy
+        run: >
+          terraform plan -input=false -lock=false -out=tfplan
+          -var="environment=${{ inputs.environment }}"
+          -var="revision=${{ github.sha }}"
+          -var="herald_mode=${{ inputs.herald_mode }}"
+
+      - name: Comment plan on the pull request
+        if: github.event_name == 'pull_request'
+        working-directory: deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STAGE: ${{ inputs.environment }}
+          PR_NUMBER: ${{ github.event.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # One comment per stage, updated on every run. The marker tells the two stages apart.
+          marker="<!-- terraform-plan:${STAGE} -->"
+
+          {
+            echo "$marker"
+            echo "**Terraform plan (\`$STAGE\`)** [Run]($RUN_URL)"
+            echo
+            echo '```terraform'
+            terraform show -no-color tfplan
+            echo '```'
+          } > comment.md
+
+          id="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"${marker}\"))) | .id" \
+            | tail -n 1)"
+
+          if [ -n "$id" ]; then
+            jq -Rs '{body: .}' comment.md \
+              | gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${id}" --input - > /dev/null
+          else
+            gh pr comment "$PR_NUMBER" --body-file comment.md
+          fi

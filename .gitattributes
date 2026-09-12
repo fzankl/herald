@@ -1,0 +1,24 @@
+# Line endings are decided here and not by each machine's core.autocrlf setting.
+# LF in the repository, LF on checkout, on every platform.
+* text=auto eol=lf
+
+# Windows batch files are the exception. They need CRLF to run reliably.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Hunk headers in git diff name the enclosing member instead of a random brace.
+*.cs diff=csharp
+*.md diff=markdown
+
+# Never normalise and never diff as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.dll binary
+*.snk binary

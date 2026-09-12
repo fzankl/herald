@@ -1,0 +1,117 @@
+name: deploy-env
+
+# One deployment and one smoke test, for the stage named in the input. deploy.yml calls this twice,
+# dev first and prd only after dev succeeded.
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Stage to deploy to. Names the GitHub environment and the Terraform state file.
+        required: true
+        type: string
+      sha:
+        description: Commit SHA being deployed. The smoke test asserts that the app reports it back.
+        required: true
+        type: string
+      run_id:
+        description: ci run holding the publish artifact for that SHA.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment: ${{ inputs.environment }}
+
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
+
+    env:
+      TF_VERSION: 1.16.2
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_AZUREAD: true
+      DEPLOY_SHA: ${{ inputs.sha }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Download publish artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: functions-publish-${{ inputs.sha }}
+          path: publish
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Read Terraform outputs
+        id: tf
+        working-directory: deploy
+        run: |
+          terraform init -input=false \
+            -backend-config="key=herald-${{ inputs.environment }}.tfstate"
+          {
+            echo "app_name=$(terraform output -raw function_app_name)"
+            echo "resource_group=$(terraform output -raw resource_group_name)"
+            echo "hostname=$(terraform output -raw function_app_default_hostname)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Deploy
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ steps.tf.outputs.app_name }}
+          package: publish
+          sku: flexconsumption
+          remote-build: false
+
+      - name: Smoke test
+        env:
+          APP_NAME: ${{ steps.tf.outputs.app_name }}
+          RESOURCE_GROUP: ${{ steps.tf.outputs.resource_group }}
+          HOSTNAME: ${{ steps.tf.outputs.hostname }}
+        run: |
+          key="$(az functionapp keys list \
+            --name "${APP_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --query functionKeys.default -o tsv)"
+
+          if [ -z "${key}" ]; then
+            echo "no default function key on ${APP_NAME}" >&2
+            exit 1
+          fi
+
+          # The runner redacts only values it knows. The key calls RunNow, so it is registered as a mask
+          # before anything could print it.
+          echo "::add-mask::${key}"
+
+          for attempt in 1 2 3 4 5 6; do
+            body="$(curl -sS --max-time 30 -H "x-functions-key: ${key}" \
+              "https://${HOSTNAME}/api/RunNow" || true)"
+            if grep -q "${DEPLOY_SHA}" <<<"${body}"; then
+              echo "smoke test passed on ${{ inputs.environment }}: ${body}"
+              exit 0
+            fi
+            echo "attempt ${attempt}: ${body:-<no response>}"
+            sleep 15
+          done
+
+          echo "smoke test failed: RunNow on ${{ inputs.environment }} did not report version ${DEPLOY_SHA}" >&2
+          exit 1

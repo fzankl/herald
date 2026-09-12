@@ -189,10 +189,10 @@ Pull requests plan with a third identity that belongs to no stage.
 
 | Role                       | Scope                     | Why                                     |
 | -------------------------- | ------------------------- | --------------------------------------- |
-| `Reader`                   | the subscription          | refresh the resources the plan compares |
+| `Reader`                   | the subscription          | sign in to the subscription and read it |
 | `Storage Blob Data Reader` | the state storage account | read the state file                     |
 
-A pull request runs the workflow file from its own branch, so whoever can push a branch decides what this identity does. It can therefore change nothing: a plan writes no state, and it runs with `-lock=false` because taking the lock would need write access. It can read both state files, which is unavoidable for a plan, and that is why only collaborators with push access can open a pull request that reaches it. A pull request from a fork gets no OIDC token while "Send write tokens to workflows from pull requests" stays off.
+A pull request runs the workflow file from its own branch, so whoever can push a branch decides what this identity does. It can therefore change nothing: a plan writes no state, and it runs with `-lock=false` because taking the lock would need write access. It also runs with `-refresh=false`, because refreshing the function app reads its app settings through a list action that `Reader` does not include. A pull request plan therefore compares the configuration with the state and shows no drift, and the apply on `main` refreshes before it changes anything. It can read both state files, which is unavoidable for a plan, and that is why only collaborators with push access can open a pull request that reaches it. A pull request from a fork gets no OIDC token while "Send write tokens to workflows from pull requests" stays off.
 
 ### The workflows
 

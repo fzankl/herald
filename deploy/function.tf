@@ -86,20 +86,30 @@ resource "azurerm_function_app_flex_consumption" "herald" {
   tags = local.tags
 }
 
+# Both role assignments set principal_type. The pipeline identity may assign roles only under an ABAC
+# condition that checks the principal type in the request, and azurerm sends that type only when
+# principal_type is set. Without it Azure answers 403 AuthorizationFailed.
+# skip_service_principal_aad_check avoids a failure while the app identity, created moments earlier
+# in the same apply, is not yet replicated in Entra ID.
+
 # Storage Blob Data Owner:
 # Documented minimum for the AzureWebJobsStorage connection and it
 # also covers the deployment container, which needs Storage Blob Data Contributor.
 resource "azurerm_role_assignment" "function_app_storage_blob" {
-  scope                = azurerm_storage_account.herald.id
-  role_definition_name = "Storage Blob Data Owner"
-  principal_id         = azurerm_function_app_flex_consumption.herald.identity[0].principal_id
+  scope                            = azurerm_storage_account.herald.id
+  role_definition_name             = "Storage Blob Data Owner"
+  principal_id                     = azurerm_function_app_flex_consumption.herald.identity[0].principal_id
+  principal_type                   = "ServicePrincipal"
+  skip_service_principal_aad_check = true
 }
 
 # Storage Table Data Contributor:
-# Without table access the host logs warnings about not being able to persist 
+# Without table access the host logs warnings about not being able to persist
 # diagnostic events, which are exactly the events that help when the app fails to start.
 resource "azurerm_role_assignment" "function_app_storage_table" {
-  scope                = azurerm_storage_account.herald.id
-  role_definition_name = "Storage Table Data Contributor"
-  principal_id         = azurerm_function_app_flex_consumption.herald.identity[0].principal_id
+  scope                            = azurerm_storage_account.herald.id
+  role_definition_name             = "Storage Table Data Contributor"
+  principal_id                     = azurerm_function_app_flex_consumption.herald.identity[0].principal_id
+  principal_type                   = "ServicePrincipal"
+  skip_service_principal_aad_check = true
 }

@@ -480,10 +480,12 @@ Write-Host "==> plan identity $planIdentityName"
 # that job could obtain a token for a stage identity, it would obtain Contributor along with it, so
 # a branch would be enough to change the subscription.
 #
-# This identity holds Reader on the subscription, which is what a refresh needs, and data plane read
-# access to the state storage account. A plan writes no state, and infra-plan.yml plans with
-# -lock=false, so there is no lease to take either. The identity can read both state files and
-# cannot change a resource or a state file. The apply on main plans again with the stage identity.
+# This identity holds Reader on the subscription and data plane read access to the state storage
+# account. A plan writes no state, and infra-plan.yml plans with -lock=false, so there is no lease to
+# take either. It also plans with -refresh=false, because refreshing the function app needs a list
+# action that Reader does not include and that would return the app settings. The identity can read
+# both state files and cannot change a resource or a state file. The apply on main plans again, with
+# a refresh, as the stage identity.
 Invoke-Az -Quiet (@(
         'identity', 'create',
         '--name', $planIdentityName,

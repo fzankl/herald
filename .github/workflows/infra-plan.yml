@@ -57,10 +57,14 @@ jobs:
 
       # -lock=false because the plan identity may read the state but not lease it. A plan that runs
       # during an apply can read a state in between, which affects this comment and nothing else.
+      # -refresh=false because refreshing the function app reads its app settings through
+      # Microsoft.Web/sites/config/list/action, which Reader does not include. The plan compares the
+      # configuration with the state and shows no drift. The apply on main refreshes as the stage
+      # identity.
       - name: Terraform plan
         working-directory: deploy
         run: >
-          terraform plan -input=false -lock=false -out=tfplan
+          terraform plan -input=false -lock=false -refresh=false -out=tfplan
           -var="environment=${{ inputs.environment }}"
           -var="revision=${{ github.sha }}"
           -var="herald_mode=${{ inputs.herald_mode }}"

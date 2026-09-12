@@ -32,6 +32,11 @@ jobs:
       && (github.event_name == 'workflow_dispatch'
         || (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'))
 
+    # actions: read lets a manual run look up the ci run that holds the artifact of an older commit.
+    permissions:
+      contents: read
+      actions: read
+
     outputs:
       deploy: ${{ steps.changed.outputs.deploy }}
       sha: ${{ steps.changed.outputs.sha }}

@@ -1,0 +1,28 @@
+# .NET
+bin/
+obj/
+publish/
+*.user
+*.suo
+.vs/
+.vscode/
+artifacts/
+
+# Azure Functions
+local.settings.json
+**/local.settings.json
+.python_packages/
+
+# Terraform — never commit real values or state
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.tfstate.lock.info
+terraform.tfvars
+*.auto.tfvars
+tfplan
+crash.log
+
+# Tooling
+.DS_Store
+Thumbs.db

@@ -1,0 +1,8 @@
+<Project>
+  <!--
+    MSBuild only auto-imports Directory.Build.props from the directory tree above a project.
+    The shared settings live in build/ (as required by the repository layout), so this shim
+    at the repository root imports them. Do not add properties here; edit build/ instead.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)build\Directory.Build.props" />
+</Project>

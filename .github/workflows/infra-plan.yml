@@ -38,6 +38,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The version tag carries the release version, so a commit without a new release changes no tag.
+      - name: Read the release version
+        run: |
+          app_version="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' build/Directory.Build.props)"
+          [ -n "$app_version" ] || { echo "no <Version> in build/Directory.Build.props" >&2; exit 1; }
+          echo "TF_VAR_app_version=$app_version" >> "$GITHUB_ENV"
+
       - uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_PLAN_CLIENT_ID }}
@@ -82,7 +89,6 @@ jobs:
         run: >
           terraform plan -input=false -lock=false -refresh=false -out=tfplan
           -var="environment=${{ inputs.environment }}"
-          -var="revision=${{ github.sha }}"
           -var="herald_mode=${{ inputs.herald_mode }}"
 
       - name: Comment plan on the pull request

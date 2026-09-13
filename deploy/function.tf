@@ -75,7 +75,8 @@ resource "azapi_resource" "function_app" {
   body = {
     kind = "functionapp,linux"
     properties = {
-      serverFarmId = azurerm_service_plan.herald.id
+      # ARM returns "serverfarms", azurerm "serverFarms". Without the replace every plan shows a change.
+      serverFarmId = replace(azurerm_service_plan.herald.id, "Microsoft.Web/serverFarms", "Microsoft.Web/serverfarms")
       httpsOnly    = true
 
       functionAppConfig = {

@@ -353,23 +353,12 @@ $planIdentityName = "id-$workload-plan-$locationShort-$instance"
 $planCredentialName = 'github-pull-request'
 $planCredentialSubject = "repo:${immutableRepo}:pull_request"
 
-$revision = 'unknown'
-try {
-    $head = & git rev-parse HEAD 2>$null
-    if ($LASTEXITCODE -eq 0 -and $head) {
-        $revision = [string]$head
-    }
-}
-catch {
-    # Not a git checkout, or no git on PATH. The version tag then says so.
-}
-
-# The same four tag keys Terraform writes, set by hand because these resources are not managed by
-# Terraform. tool says which mechanism owns them. The shared resources carry shd, so that a second
-# run for the other stage does not retag them. The identity carries the stage it belongs to, which
-# is also what Terraform writes once the import blocks adopt it.
-$stateTags = @("workload=$workload", "environment=$sharedEnvironment", 'tool=bootstrap', "version=$revision")
-$identityTags = @("workload=$workload", "environment=$Environment", 'tool=bootstrap', "version=$revision")
+# The tag keys Terraform writes, without version: these resources do not change with a release, and
+# a version recorded at bootstrap time would only describe the checkout the script last ran from.
+# tool says which mechanism owns them. The shared resources carry shd, so that a second run for the
+# other stage does not retag them. A stage identity carries the stage it belongs to.
+$stateTags = @("workload=$workload", "environment=$sharedEnvironment", 'tool=bootstrap')
+$identityTags = @("workload=$workload", "environment=$Environment", 'tool=bootstrap')
 
 try {
     $subscriptionId = [string](Invoke-Az @('account', 'show', '--query', 'id', '-o', 'tsv'))

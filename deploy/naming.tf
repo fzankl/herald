@@ -20,6 +20,6 @@ locals {
     workload    = var.workload
     environment = var.environment
     tool        = "terraform"
-    version     = var.revision
+    version     = var.app_version
   }
 }

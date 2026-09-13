@@ -32,9 +32,14 @@ variable "instance" {
   default     = "001"
 }
 
-variable "revision" {
-  description = "Commit SHA of the infrastructure state, written to the version tag of every resource."
+variable "app_version" {
+  description = "Release version from build/Directory.Build.props, written to the version tag of every resource."
   type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+", var.app_version))
+    error_message = "app_version must start with a semantic version such as 0.1.0."
+  }
 }
 
 variable "herald_mode" {

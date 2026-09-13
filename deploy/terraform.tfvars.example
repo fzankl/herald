@@ -15,9 +15,9 @@
 # Stage: dev or prd. Required, no default.
 environment = "dev"
 
-# Commit SHA of the infrastructure state, written to the version tag of every resource.
-# infra.yml passes this as -var, so it is normally not set in a file.
-revision = ""
+# Release version from build/Directory.Build.props, written to the version tag of every resource.
+# The workflows read it from that file, so it is normally not set here.
+app_version = "0.1.0"
 
 # Optional, all have defaults:
 # workload               = "herald"

@@ -148,7 +148,7 @@ The backend in `deploy/providers.tf` carries no `key`, so a local plan has to na
 
 ```bash
 terraform -chdir=deploy init -backend-config="key=herald-dev.tfstate"
-terraform -chdir=deploy plan -var="environment=dev" -var="revision=$(git rev-parse HEAD)"
+terraform -chdir=deploy plan -var="environment=dev" -var="app_version=0.1.0"
 ```
 
 Terraform needs a state store before it can run, and the pipeline needs an identity before Terraform can create one.

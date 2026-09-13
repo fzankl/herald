@@ -192,7 +192,7 @@ Pull requests plan with a third identity that belongs to no stage.
 | `Reader`                   | the subscription          | sign in to the subscription and read it |
 | `Storage Blob Data Reader` | the state storage account | read the state file                     |
 
-A pull request runs the workflow file from its own branch, so whoever can push a branch decides what this identity does. It can therefore change nothing: a plan writes no state, and it runs with `-lock=false` because taking the lock would need write access. It also runs with `-refresh=false`, because refreshing the function app reads its app settings through a list action that `Reader` does not include. A pull request plan therefore compares the configuration with the state and shows no drift, and the apply on `main` refreshes before it changes anything. It can read both state files, which is unavoidable for a plan, and that is why only collaborators with push access can open a pull request that reaches it. A pull request from a fork gets no OIDC token while "Send write tokens to workflows from pull requests" stays off.
+A pull request runs the workflow file from its own branch, so whoever can push a branch decides what this identity does. It can therefore change nothing: a plan writes no state, and it runs with `-lock=false` because taking the lock would need write access. It also runs with `-refresh=false`, because refreshing the function app reads its app settings through a list action that `Reader` does not include. A pull request plan therefore compares the configuration with the state and shows no drift, and the apply on `main` refreshes before it changes anything. Before the first apply of a stage there is no state file, and `terraform init` would have to create one, so the plan then runs against an empty local state instead. It can read both state files, which is unavoidable for a plan, and that is why only collaborators with push access can open a pull request that reaches it. A pull request from a fork gets no OIDC token while "Send write tokens to workflows from pull requests" stays off.
 
 ### The workflows
 
@@ -215,6 +215,8 @@ A called workflow gets the repository secrets through `secrets: inherit`. The pe
 
 The deploy smoke test asserts that `RunNow` reports the commit SHA it just deployed.
 The function names would also come back from an app that is still running the previous build, so they prove nothing about the upload. A rollback is `deploy` run manually with the SHA of the last green commit. It replays both stages in the same order.
+
+`deploy` only starts on its own when a commit changes `src/` or `build/`. After the first `infra` apply of a new setup the function apps are therefore empty, and the first code deploy is the same manual run with the SHA of `main`: `gh workflow run deploy.yml -f sha=<sha>`.
 
 `HERALD_MODE_DEV` and `HERALD_MODE_PRD` are repository variables and no workflow writes them. Neither has to exist - the `herald_mode` input defaults to `Dry`, so only a stage that should publish needs its variable set. Switching `prd` to `Live` means setting that variable and running `infra`, with the same review as any other infrastructure change, and `dev` stays on `Dry`.
 

@@ -49,11 +49,27 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
 
+      # When the state file does not exist yet, terraform init creates it, and creating it takes a lease
+      # the read-only plan identity may not take. That is the case for every stage before its first
+      # apply. The plan then runs against an empty local state, which is what the backend would hold.
       - name: Terraform init
         working-directory: deploy
-        run: >
-          terraform init -input=false
-          -backend-config="key=herald-${{ inputs.environment }}.tfstate"
+        env:
+          STATE_KEY: herald-${{ inputs.environment }}.tfstate
+        run: |
+          account="$(sed -n 's/^ *storage_account_name *= *"\(.*\)"/\1/p' providers.tf)"
+          container="$(sed -n 's/^ *container_name *= *"\(.*\)"/\1/p' providers.tf)"
+          exists="$(az storage blob exists --auth-mode login \
+            --account-name "$account" --container-name "$container" --name "$STATE_KEY" \
+            --query exists -o tsv)"
+
+          if [ "$exists" = "true" ]; then
+            terraform init -input=false -backend-config="key=$STATE_KEY"
+          else
+            echo "No state at $STATE_KEY yet, planning against an empty state."
+            printf 'terraform {\n  backend "local" {}\n}\n' > backend_override.tf
+            terraform init -input=false
+          fi
 
       # -lock=false because the plan identity may read the state but not lease it. A plan that runs
       # during an apply can read a state in between, which affects this comment and nothing else.

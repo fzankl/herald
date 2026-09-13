@@ -48,43 +48,70 @@ resource "azurerm_service_plan" "herald" {
   tags                = local.tags
 }
 
-resource "azurerm_function_app_flex_consumption" "herald" {
-  name                = local.function_app_name
-  location            = azurerm_resource_group.herald.location
-  resource_group_name = azurerm_resource_group.herald.name
-  service_plan_id     = azurerm_service_plan.herald.id
+# The function app is an azapi_resource and not azurerm_function_app_flex_consumption. That resource
+# writes AzureWebJobsStorage and DEPLOYMENT_STORAGE_CONNECTION_STRING as connection strings with an
+# empty account key into the app settings, even with identity-based storage, and the host then takes
+# the connection string and cannot read its own storage. With the ARM resource the app settings below
+# are the complete list. Provider issue, open as of azurerm 5.5.0:
+# https://github.com/hashicorp/terraform-provider-azurerm/issues/29149
+#
+# AzureWebJobsStorage__accountName is enough for the default storage DNS suffix. Azure/functions-action
+# also looks for exactly that setting and warns when it is missing.
+resource "azapi_resource" "function_app" {
+  type      = "Microsoft.Web/sites@2025-03-01"
+  name      = local.function_app_name
+  parent_id = azurerm_resource_group.herald.id
+  location  = azurerm_resource_group.herald.location
+  tags      = local.tags
 
-  storage_container_type      = "blobContainer"
-  storage_container_endpoint  = "${azurerm_storage_account.herald.primary_blob_endpoint}${azurerm_storage_container.deployments.name}"
-  storage_authentication_type = "SystemAssignedIdentity"
-
-  runtime_name    = "dotnet-isolated"
-  runtime_version = "10.0"
-
-  maximum_instance_count = var.maximum_instance_count
-  instance_memory_in_mb  = var.instance_memory_in_mb
-
-  https_only = true
-
+  # identity_ids = [] matches what the state holds. azapi keeps principal_id from the state only when
+  # type and identity_ids both equal it. Left null, principal_id becomes unknown on every update, and
+  # both role assignments below would be replaced on every apply.
   identity {
-    type = "SystemAssigned"
+    type         = "SystemAssigned"
+    identity_ids = []
   }
 
-  site_config {
-    application_insights_connection_string = azurerm_application_insights.herald.connection_string
+  body = {
+    kind = "functionapp,linux"
+    properties = {
+      serverFarmId = azurerm_service_plan.herald.id
+      httpsOnly    = true
+
+      functionAppConfig = {
+        deployment = {
+          storage = {
+            type  = "blobContainer"
+            value = "${azurerm_storage_account.herald.primary_blob_endpoint}${azurerm_storage_container.deployments.name}"
+            authentication = {
+              type = "SystemAssignedIdentity"
+            }
+          }
+        }
+        runtime = {
+          name    = "dotnet-isolated"
+          version = "10.0"
+        }
+        scaleAndConcurrency = {
+          maximumInstanceCount = var.maximum_instance_count
+          instanceMemoryMB     = var.instance_memory_in_mb
+        }
+      }
+
+      siteConfig = {
+        appSettings = [
+          { name = "APPLICATIONINSIGHTS_CONNECTION_STRING", value = azurerm_application_insights.herald.connection_string },
+          { name = "AzureWebJobsStorage__accountName", value = azurerm_storage_account.herald.name },
+          { name = "AzureWebJobsStorage__credential", value = "managedidentity" },
+          { name = "Herald__Mode", value = var.herald_mode },
+        ]
+      }
+    }
   }
 
-  app_settings = {
-    "Herald__Mode" = var.herald_mode
-
-    "AzureWebJobsStorage__blobServiceUri"  = azurerm_storage_account.herald.primary_blob_endpoint
-    "AzureWebJobsStorage__queueServiceUri" = azurerm_storage_account.herald.primary_queue_endpoint
-    "AzureWebJobsStorage__tableServiceUri" = azurerm_storage_account.herald.primary_table_endpoint
-    "AzureWebJobsStorage__credential"      = "managedidentity"
-  }
-
-  tags = local.tags
+  response_export_values = ["properties.defaultHostName"]
 }
+
 
 # Both role assignments set principal_type. The pipeline identity may assign roles only under an ABAC
 # condition that checks the principal type in the request, and azurerm sends that type only when
@@ -98,7 +125,7 @@ resource "azurerm_function_app_flex_consumption" "herald" {
 resource "azurerm_role_assignment" "function_app_storage_blob" {
   scope                            = azurerm_storage_account.herald.id
   role_definition_name             = "Storage Blob Data Owner"
-  principal_id                     = azurerm_function_app_flex_consumption.herald.identity[0].principal_id
+  principal_id                     = azapi_resource.function_app.identity[0].principal_id
   principal_type                   = "ServicePrincipal"
   skip_service_principal_aad_check = true
 }
@@ -109,7 +136,7 @@ resource "azurerm_role_assignment" "function_app_storage_blob" {
 resource "azurerm_role_assignment" "function_app_storage_table" {
   scope                            = azurerm_storage_account.herald.id
   role_definition_name             = "Storage Table Data Contributor"
-  principal_id                     = azurerm_function_app_flex_consumption.herald.identity[0].principal_id
+  principal_id                     = azapi_resource.function_app.identity[0].principal_id
   principal_type                   = "ServicePrincipal"
   skip_service_principal_aad_check = true
 }

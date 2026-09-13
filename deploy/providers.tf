@@ -12,6 +12,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "5.5.0"
     }
+    azapi = {
+      source  = "Azure/azapi"
+      version = "2.12.0"
+    }
   }
 
   # The state lives in a storage account that Terraform does not manage, in a resource group that
@@ -34,3 +38,6 @@ provider "azurerm" {
   # subscription_id comes from ARM_SUBSCRIPTION_ID so that no subscription value is committed.
   features {}
 }
+
+# Signs in the same way as azurerm and reads ARM_SUBSCRIPTION_ID as well.
+provider "azapi" {}

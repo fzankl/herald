@@ -14,6 +14,14 @@ on:
         required: false
         default: Dry
         type: string
+      content_post_pattern:
+        description: Value for var.content_post_pattern.
+        required: true
+        type: string
+      content_template_folder:
+        description: Value for var.content_template_folder.
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -71,6 +79,10 @@ jobs:
       # dev apply rather than before it.
       - name: Terraform plan
         working-directory: deploy
+        # Through the environment and not through -var, for the reason given in infra-plan.yml.
+        env:
+          TF_VAR_content_post_pattern: ${{ inputs.content_post_pattern }}
+          TF_VAR_content_template_folder: ${{ inputs.content_template_folder }}
         run: >
           terraform plan -input=false -lock-timeout=5m -out=tfplan
           -var="environment=${{ inputs.environment }}"

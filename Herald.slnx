@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Herald.Core.Test.Unit/Herald.Core.Test.Unit.csproj" />
     <Project Path="src/Herald.Core/Herald.Core.csproj" />
     <Project Path="src/Herald.Functions/Herald.Functions.csproj" />
   </Folder>

@@ -105,6 +105,8 @@ resource "azapi_resource" "function_app" {
           { name = "AzureWebJobsStorage__accountName", value = azurerm_storage_account.herald.name },
           { name = "AzureWebJobsStorage__credential", value = "managedidentity" },
           { name = "Herald__Mode", value = var.herald_mode },
+          { name = "Herald__Content__PostPattern", value = var.content_post_pattern },
+          { name = "Herald__Content__TemplateFolder", value = var.content_template_folder },
         ]
       }
     }

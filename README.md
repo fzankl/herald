@@ -98,13 +98,14 @@ All schedules are UTC: Flex Consumption does not support `WEBSITE_TIME_ZONE` or 
 ## Repository layout
 
 ```
-src/Herald.Functions   function app: the three triggers, host wiring
-src/Herald.Core        domain logic and configuration, no Azure dependencies
-build/                 TargetFramework and central package versions
-deploy/                Terraform
-docs/                  target POST API facts, content format, runbook
-scripts/               bootstrap, token exchange
-.github/workflows/     ci, infra, deploy
+src/Herald.Functions       function app: the three triggers, host wiring
+src/Herald.Core            domain logic and configuration, no Azure dependencies
+src/Herald.Core.Test.Unit  unit tests for Herald.Core, xUnit v3 on Microsoft.Testing.Platform
+build/                     TargetFramework and central package versions
+deploy/                    Terraform
+docs/                      target POST API facts, content format, runbook
+scripts/                   bootstrap, token exchange
+.github/workflows/         ci, infra, deploy
 ```
 
 `Directory.Build.props` and `Directory.Packages.props` at the root are two-line shims.
@@ -120,7 +121,7 @@ dotnet run
 
 `dotnet run` is the entry point with `Azure.Functions.Sdk`. It starts the Functions host when Core Tools is installed.
 
-The template sets `Herald__Mode` to `Dry`. Removing the setting, or giving it any other value, makes the app fail at start-up with a message naming the setting.
+The template sets `Herald__Mode` to `Dry` and fills in the content settings. Removing a required setting, or giving it an invalid value, makes the app fail at start-up with a message naming the setting.
 That is deliberate, because a failed start on Flex Consumption offers no other diagnosis.
 
 `local.settings.json` is in `.gitignore` and never holds a real token in a committed file.
@@ -136,16 +137,23 @@ curl http://localhost:7071/api/RunNow
 ```bash
 dotnet restore src/Herald.Functions/Herald.Functions.csproj
 dotnet build Herald.slnx --no-restore -warnaserror
+dotnet test --solution Herald.slnx --no-build
 ```
+
+`global.json` selects Microsoft.Testing.Platform as the test runner, which xUnit v3 requires on the .NET 10 SDK.
+That is why `dotnet test` takes the solution through `--solution`.
 
 Restore the function project itself, not only the solution:
 Only a direct project restore runs the post-restore hook that generates the extension project `obj/azure_functions/azure_functions.g.csproj` (`AZFW0108`).
 
 ## Configuration
 
-| Setting        | Meaning                                                                           |
-| -------------- | --------------------------------------------------------------------------------- |
-| `Herald__Mode` | `Dry` (default in the template) or `Live`, matched case-insensitively. (Required) |
+| Setting                                | Meaning                                                                                                                                   |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `Herald__Mode`                         | `Dry` (default in the template) or `Live`, matched case-insensitively. (Required)                                                         |
+| `Herald__Content__PostPattern`         | Glob that selects the post files, relative to the repository root, ending in `.md`. A single `*` does not cross a `/`. (Required)         |
+| `Herald__Content__TemplateFolder`      | Folder that holds the comment templates, relative to the repository root. Files in it are never read as posts. (Required)                 |
+| `Herald__Content__CommitMessageSuffix` | Appended to every commit message herald writes into the content repository. Defaults to `[skip ci]`, and an empty value turns it off.     |
 
 ## Deployment
 
@@ -163,7 +171,7 @@ terraform -chdir=deploy plan -var="environment=dev" -var="app_version=0.1.0"
 2. Run `scripts/bootstrap.ps1 <owner>/<repository> dev`, then the same with `prd`. It creates the state store, one pipeline identity per stage and a plan identity, each with its federated credential, in a resource group Terraform does not manage. It is idempotent and prints every value the next steps need.
 3. Create the GitHub environments `dev` and `prd`, and give `prd` a required reviewer.
 4. Add `AZURE_CLIENT_ID` as an environment secret on each stage, and `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` and `AZURE_PLAN_CLIENT_ID` as repository secrets. None of them is confidential, but secrets are redacted in workflow logs.
-5. Set the repository variable `DEPLOY_ENABLED` to `true`. Without it `infra` and `deploy` skip every job.
+5. Set the repository variables `CONTENT_POST_PATTERN` and `CONTENT_TEMPLATE_FOLDER` to the values of the two required content settings, and `DEPLOY_ENABLED` to `true`. Without `DEPLOY_ENABLED` `infra` and `deploy` skip every job.
 6. Merge to `main`. `infra` applies `dev`, then `prd`.
 7. Deploy the code once by hand, because `deploy` starts on its own only when `src/` or `build/` changes: `gh workflow run deploy.yml -f sha=<sha of main>`.
 

@@ -3,6 +3,8 @@
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "Herald__Mode": "Dry"
+    "Herald__Mode": "Dry",
+    "Herald__Content__PostPattern": "posts/*/linkedin/*.md",
+    "Herald__Content__TemplateFolder": "templates"
   }
 }

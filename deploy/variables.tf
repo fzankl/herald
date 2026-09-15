@@ -53,6 +53,26 @@ variable "herald_mode" {
   }
 }
 
+variable "content_post_pattern" {
+  description = "Value of the Herald__Content__PostPattern application setting: the glob that selects the post files in the content repository, for example posts/*/linkedin/*.md. No default, because it describes a repository this configuration does not know."
+  type        = string
+
+  validation {
+    condition     = trimspace(var.content_post_pattern) != ""
+    error_message = "content_post_pattern must not be empty."
+  }
+}
+
+variable "content_template_folder" {
+  description = "Value of the Herald__Content__TemplateFolder application setting: the folder in the content repository that holds the comment templates, for example a top-level folder named templates. No default, for the same reason as content_post_pattern."
+  type        = string
+
+  validation {
+    condition     = trimspace(var.content_template_folder) != ""
+    error_message = "content_template_folder must not be empty."
+  }
+}
+
 variable "maximum_instance_count" {
   description = "Upper bound for on-demand instances per scale group. Flex Consumption allows 1 to 1000."
   type        = number

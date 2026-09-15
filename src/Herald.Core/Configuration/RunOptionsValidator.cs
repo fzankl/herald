@@ -3,15 +3,15 @@ using FluentValidation;
 namespace Herald.Core.Configuration;
 
 /// <summary>
-/// Validation rules for <see cref="HeraldOptions"/>. Every message names the application
+/// Validation rules for <see cref="RunOptions"/>. Every message names the application
 /// setting it is about, because a failed start on Flex Consumption offers no other diagnosis.
 /// </summary>
-public sealed class HeraldOptionsValidator : AbstractValidator<HeraldOptions>
+public sealed class RunOptionsValidator : AbstractValidator<RunOptions>
 {
-    private const string Setting = $"Application setting '{HeraldOptions.ModeSettingName}'";
+    private const string Setting = $"Application setting '{RunOptions.ModeSettingName}'";
     private const string AllowedValues = $"Allowed values: '{nameof(RunMode.Dry)}', '{nameof(RunMode.Live)}'.";
 
-    public HeraldOptionsValidator()
+    public RunOptionsValidator()
     {
         RuleFor(options => options.Mode)
             .NotNull()

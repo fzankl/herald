@@ -39,7 +39,7 @@ jobs:
         run: dotnet build Herald.slnx --no-restore -warnaserror
 
       - name: Test
-        run: dotnet test Herald.slnx --no-build
+        run: dotnet test --solution Herald.slnx --no-build
 
       - uses: hashicorp/setup-terraform@v4
         with:

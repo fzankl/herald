@@ -1,13 +1,14 @@
 namespace Herald.Core.Configuration;
 
 /// <summary>
-/// App-wide switches that are not specific to any target or the publishing rules.
-/// Bound from the <c>Herald</c> configuration section, like every other options class.
+/// How the app runs as a whole, independent of any target or the publishing rules. Bound from the
+/// root <c>Herald</c> section. Each more specific area has its own section below it and its own
+/// options class, for example <see cref="ContentRepositoryOptions"/>.
 /// </summary>
-public sealed class HeraldOptions
+public sealed class RunOptions
 {
-    public const string SectionName = "Herald";
-    public const string ModeSettingName = $"{SectionName}__{nameof(Mode)}";
+    public const string SectionName = SectionNames.Root;
+    public const string ModeSettingName = $"{SectionNames.Root}__{nameof(Mode)}";
 
     /// <summary>
     /// Nullable on purpose: it is what separates a missing setting from an explicit

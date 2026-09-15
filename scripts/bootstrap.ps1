@@ -557,6 +557,7 @@ Terraform backend
 
 Next
   - create the GitHub environment "$Environment" (prd needs a required reviewer)
+  - set the repository variables CONTENT_POST_PATTERN and CONTENT_TEMPLATE_FOLDER, otherwise the plan fails
   - set the repository variable DEPLOY_ENABLED to true, otherwise infra and deploy skip every job
   - run this script for the other stage
 "@

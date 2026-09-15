@@ -19,9 +19,9 @@ public sealed class RunNow
         ?? "unknown";
 
     private readonly ILogger<RunNow> _logger;
-    private readonly HeraldOptions _options;
+    private readonly RunOptions _options;
 
-    public RunNow(ILogger<RunNow> logger, IOptions<HeraldOptions> options)
+    public RunNow(ILogger<RunNow> logger, IOptions<RunOptions> options)
     {
         _logger = logger;
         _options = options.Value;

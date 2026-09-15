@@ -12,10 +12,17 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddHeraldOptions(this IServiceCollection services)
     {
-        services.AddSingleton<IValidator<HeraldOptions>, HeraldOptionsValidator>();
+        services.AddSingleton<IValidator<RunOptions>, RunOptionsValidator>();
 
-        services.AddOptions<HeraldOptions>()
-            .BindConfiguration(HeraldOptions.SectionName)
+        services.AddOptions<RunOptions>()
+            .BindConfiguration(RunOptions.SectionName)
+            .ValidateWithFluentValidation()
+            .ValidateOnStart();
+
+        services.AddSingleton<IValidator<ContentRepositoryOptions>, ContentRepositoryOptionsValidator>();
+
+        services.AddOptions<ContentRepositoryOptions>()
+            .BindConfiguration(ContentRepositoryOptions.SectionName)
             .ValidateWithFluentValidation()
             .ValidateOnStart();
 

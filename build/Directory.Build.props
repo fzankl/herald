@@ -6,6 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!--
+      The documentation file is generated so that the compiler resolves every cref in an XML
+      comment and a stale reference becomes a build error. 1591 stays suppressed: a comment is
+      written where it says something the signature does not, not on every public member.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <InvariantGlobalization>true</InvariantGlobalization>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

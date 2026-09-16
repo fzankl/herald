@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using FluentValidation;
 using Herald.Core.Configuration;
+using Herald.Core.Parsing;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Herald.Functions.Extensions;
@@ -30,7 +31,18 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Configurs the app specific JSON settings.
+    /// Registers the domain services of Herald.Core. They are singletons because they hold no state
+    /// and depend on nothing that lives for one function invocation.
+    /// </summary>
+    public static IServiceCollection AddHeraldServices(this IServiceCollection services)
+    {
+        services.AddSingleton<IPostParser, PostParser>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures the app specific JSON settings.
     /// </summary>
     public static IServiceCollection ConfigureHeraldJson(this IServiceCollection services)
     {

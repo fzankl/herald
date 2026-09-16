@@ -14,7 +14,7 @@ namespace Herald.Functions.Functions;
 /// </summary>
 public sealed class RunNow
 {
-    private static readonly string CodeVersion =
+    private static readonly string __codeVersion =
         typeof(RunNow).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         ?? "unknown";
 
@@ -37,7 +37,7 @@ public sealed class RunNow
 
         return new OkObjectResult(new RunNowResponse(
             _options.Mode,
-            CodeVersion,
+            __codeVersion,
             startedAtUtc));
     }
 

@@ -7,6 +7,7 @@ builder.ConfigureFunctionsWebApplication();
 
 builder.Services
     .AddHeraldOptions()
+    .AddHeraldServices()
     .ConfigureHeraldJson();
 
 builder.Build().Run();

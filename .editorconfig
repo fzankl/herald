@@ -150,10 +150,16 @@ csharp_preserve_single_line_blocks = true
 ## Naming.
 ##
 
+# All naming rules are reported under IDE1006, and only this severity reaches the build. The
+# severity on each rule below drives the IDE alone, which is why the rules are enforced here.
+dotnet_diagnostic.IDE1006.severity = warning
+
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 dotnet_naming_style.camel_case.capitalization = camel_case
 dotnet_naming_style.underscore_camel_case.capitalization = camel_case
 dotnet_naming_style.underscore_camel_case.required_prefix = _
+dotnet_naming_style.double_underscore_camel_case.capitalization = camel_case
+dotnet_naming_style.double_underscore_camel_case.required_prefix = __
 dotnet_naming_style.interface_prefix.capitalization = pascal_case
 dotnet_naming_style.interface_prefix.required_prefix = I
 dotnet_naming_style.type_parameter_prefix.capitalization = pascal_case
@@ -175,6 +181,15 @@ dotnet_naming_symbols.constants.required_modifiers = const
 dotnet_naming_rule.constants_are_pascal_case.symbols = constants
 dotnet_naming_rule.constants_are_pascal_case.style = pascal_case
 dotnet_naming_rule.constants_are_pascal_case.severity = suggestion
+
+# A private static field carries two underscores, so that it reads apart from an instance field.
+# Constants are matched by the rule above, which comes first and requires the const modifier.
+dotnet_naming_symbols.private_static_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_fields.applicable_accessibilities = private, private_protected
+dotnet_naming_symbols.private_static_fields.required_modifiers = static
+dotnet_naming_rule.private_static_fields_are_double_underscored.symbols = private_static_fields
+dotnet_naming_rule.private_static_fields_are_double_underscored.style = double_underscore_camel_case
+dotnet_naming_rule.private_static_fields_are_double_underscored.severity = suggestion
 
 dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private, private_protected

@@ -15,8 +15,13 @@ internal static class ValidationResultAssertionExtensions
         string because = "",
         params object[] becauseArgs)
     {
-        subject.Errors.Should().ContainSingle(because, becauseArgs)
-            .Which.ErrorMessage.Should().Contain($"'{expectedSettingName}'", because, becauseArgs)
-            .And.Contain(expected, because, becauseArgs);
+        subject.Errors.Should()
+            .ContainSingle(because, becauseArgs)
+            .Which
+            .ErrorMessage
+            .Should()
+            .Contain($"'{expectedSettingName}'", because, becauseArgs)
+            .And
+            .Contain(expected, because, becauseArgs);
     }
 }

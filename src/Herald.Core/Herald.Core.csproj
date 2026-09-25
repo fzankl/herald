@@ -5,6 +5,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>

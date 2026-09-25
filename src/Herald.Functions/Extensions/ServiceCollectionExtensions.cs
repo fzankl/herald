@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using FluentValidation;
 using Herald.Core.Configuration;
+using Herald.Core.Content;
 using Herald.Core.Parsing;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,6 +38,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddHeraldServices(this IServiceCollection services)
     {
         services.AddSingleton<IPostParser, PostParser>();
+        services.AddSingleton<IPostFileSelector, PostFileSelector>();
 
         return services;
     }

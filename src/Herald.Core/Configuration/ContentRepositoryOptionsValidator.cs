@@ -8,6 +8,8 @@ namespace Herald.Core.Configuration;
 /// </summary>
 public sealed class ContentRepositoryOptionsValidator : AbstractValidator<ContentRepositoryOptions>
 {
+    private const string RepositorySetting = $"Application setting '{ContentRepositoryOptions.RepositorySettingName}'";
+    private const string BranchSetting = $"Application setting '{ContentRepositoryOptions.BranchSettingName}'";
     private const string PostPatternSetting = $"Application setting '{ContentRepositoryOptions.PostPatternSettingName}'";
     private const string TemplateFolderSetting = $"Application setting '{ContentRepositoryOptions.TemplateFolderSettingName}'";
     private const string CommitMessageSuffixSetting = $"Application setting '{ContentRepositoryOptions.CommitMessageSuffixSettingName}'";
@@ -16,6 +18,18 @@ public sealed class ContentRepositoryOptionsValidator : AbstractValidator<Conten
     public ContentRepositoryOptionsValidator()
     {
         RuleLevelCascadeMode = CascadeMode.Stop;
+
+        RuleFor(options => options.Repository)
+            .NotEmpty()
+            .WithMessage($"{RepositorySetting} is missing. Example: 'owner/blog'.")
+            .Must(repository => IsOwnerAndName(repository!))
+            .WithMessage(options => $"{RepositorySetting} has the value '{options.Repository}'. It names the repository as 'owner/name', without a host, without a leading or trailing '/' and without '.git'.");
+
+        RuleFor(options => options.Branch)
+            .NotEmpty()
+            .WithMessage($"{BranchSetting} is empty. Leave the setting out to use '{ContentRepositoryOptions.DefaultBranch}'.")
+            .Must(branch => IsPlainBranch(branch!))
+            .WithMessage(options => $"{BranchSetting} has the value '{options.Branch}'. A branch is named without spaces, without '..' and without a leading or trailing '/'.");
 
         RuleFor(options => options.PostPattern)
             .NotEmpty()
@@ -45,4 +59,23 @@ public sealed class ContentRepositoryOptionsValidator : AbstractValidator<Conten
 
     private static bool IsPlainFolder(string folder) =>
         !folder.EndsWith('/') && !folder.Contains('*');
+
+    // Two segments and nothing else, so that a host, a path or a '.git' suffix is rejected here
+    // instead of turning into a request against a repository that does not exist.
+    private static bool IsOwnerAndName(string repository)
+    {
+        var segments = repository.Split('/');
+
+        return segments.Length == 2
+            && segments.All(segment => segment.Length > 0 && !segment.Contains(' '))
+            && !repository.Contains('\\')
+            && !repository.EndsWith(".git", StringComparison.Ordinal);
+    }
+
+    private static bool IsPlainBranch(string branch) =>
+        !branch.StartsWith('/')
+        && !branch.EndsWith('/')
+        && !branch.Contains(' ')
+        && !branch.Contains('\\')
+        && !branch.Split('/').Contains("..");
 }

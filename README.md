@@ -151,6 +151,8 @@ Only a direct project restore runs the post-restore hook that generates the exte
 | Setting                                | Meaning                                                                                                                                   |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `Herald__Mode`                         | `Dry` (default in the template) or `Live`, matched case-insensitively. (Required)                                                         |
+| `Herald__Content__Repository`          | The content repository as `owner/name`. Reads and writes go through the GitHub REST API against this one repository. (Required)           |
+| `Herald__Content__Branch`              | Branch herald reads the posts from and writes its results back to. Defaults to `main`.                                                    |
 | `Herald__Content__PostPattern`         | Glob that selects the post files, relative to the repository root, ending in `.md`. A single `*` does not cross a `/`. (Required)         |
 | `Herald__Content__TemplateFolder`      | Folder that holds the comment templates, relative to the repository root. Files in it are never read as posts. (Required)                 |
 | `Herald__Content__CommitMessageSuffix` | Appended to every commit message herald writes into the content repository. Defaults to `[skip ci]`, and an empty value turns it off.     |
@@ -171,7 +173,7 @@ terraform -chdir=deploy plan -var="environment=dev" -var="app_version=0.1.0"
 2. Run `scripts/bootstrap.ps1 <owner>/<repository> dev`, then the same with `prd`. It creates the state store, one pipeline identity per stage and a plan identity, each with its federated credential, in a resource group Terraform does not manage. It is idempotent and prints every value the next steps need.
 3. Create the GitHub environments `dev` and `prd`, and give `prd` a required reviewer.
 4. Add `AZURE_CLIENT_ID` as an environment secret on each stage, and `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` and `AZURE_PLAN_CLIENT_ID` as repository secrets. None of them is confidential, but secrets are redacted in workflow logs.
-5. Set the repository variables `CONTENT_POST_PATTERN` and `CONTENT_TEMPLATE_FOLDER` to the values of the two required content settings, and `DEPLOY_ENABLED` to `true`. Without `DEPLOY_ENABLED` `infra` and `deploy` skip every job.
+5. Set the repository variables `CONTENT_REPOSITORY`, `CONTENT_POST_PATTERN` and `CONTENT_TEMPLATE_FOLDER` to the values of the three required content settings, and `DEPLOY_ENABLED` to `true`. Without `DEPLOY_ENABLED` `infra` and `deploy` skip every job.
 6. Merge to `main`. `infra` applies `dev`, then `prd`.
 7. Deploy the code once by hand, because `deploy` starts on its own only when `src/` or `build/` changes: `gh workflow run deploy.yml -f sha=<sha of main>`.
 

@@ -53,6 +53,16 @@ variable "herald_mode" {
   }
 }
 
+variable "content_repository" {
+  description = "Value of the Herald__Content__Repository application setting: the content repository as owner/name, for example owner/blog. No default, because it names a repository this configuration does not know."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^/[:space:]]+/[^/[:space:]]+$", var.content_repository))
+    error_message = "content_repository must name the repository as owner/name, without a host and without .git."
+  }
+}
+
 variable "content_post_pattern" {
   description = "Value of the Herald__Content__PostPattern application setting: the glob that selects the post files in the content repository, for example posts/*/linkedin/*.md. No default, because it describes a repository this configuration does not know."
   type        = string

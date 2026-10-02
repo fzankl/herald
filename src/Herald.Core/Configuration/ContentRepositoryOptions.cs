@@ -8,11 +8,26 @@ public sealed class ContentRepositoryOptions
 {
     public const string SectionName = SectionNames.Content;
     public const string DefaultCommitMessageSuffix = "[skip ci]";
+    public const string DefaultBranch = "main";
 
     private const string SettingPrefix = $"{SectionNames.Root}__Content__";
+    public const string RepositorySettingName = $"{SettingPrefix}{nameof(Repository)}";
+    public const string BranchSettingName = $"{SettingPrefix}{nameof(Branch)}";
     public const string PostPatternSettingName = $"{SettingPrefix}{nameof(PostPattern)}";
     public const string TemplateFolderSettingName = $"{SettingPrefix}{nameof(TemplateFolder)}";
     public const string CommitMessageSuffixSettingName = $"{SettingPrefix}{nameof(CommitMessageSuffix)}";
+
+    /// <summary>
+    /// The content repository as <c>owner/name</c>, for example <c>owner/blog</c>. Reads and writes
+    /// go through the GitHub REST API against this one repository and no other.
+    /// </summary>
+    public string? Repository { get; init; }
+
+    /// <summary>
+    /// The branch herald reads the posts from and writes its results back to. Defaults to
+    /// <see cref="DefaultBranch"/>, which is the branch a content repository publishes from.
+    /// </summary>
+    public string? Branch { get; init; } = DefaultBranch;
 
     /// <summary>
     /// Glob that selects the post files among repository-relative paths, for example

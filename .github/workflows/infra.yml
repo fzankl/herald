@@ -37,6 +37,7 @@ jobs:
     with:
       environment: dev
       herald_mode: ${{ vars.HERALD_MODE_DEV || 'Dry' }}
+      content_repository: ${{ vars.CONTENT_REPOSITORY }}
       content_post_pattern: ${{ vars.CONTENT_POST_PATTERN }}
       content_template_folder: ${{ vars.CONTENT_TEMPLATE_FOLDER }}
     secrets: inherit
@@ -51,6 +52,7 @@ jobs:
     with:
       environment: prd
       herald_mode: ${{ vars.HERALD_MODE_PRD || 'Dry' }}
+      content_repository: ${{ vars.CONTENT_REPOSITORY }}
       content_post_pattern: ${{ vars.CONTENT_POST_PATTERN }}
       content_template_folder: ${{ vars.CONTENT_TEMPLATE_FOLDER }}
     secrets: inherit
@@ -65,6 +67,7 @@ jobs:
     with:
       environment: dev
       herald_mode: ${{ vars.HERALD_MODE_DEV || 'Dry' }}
+      content_repository: ${{ vars.CONTENT_REPOSITORY }}
       content_post_pattern: ${{ vars.CONTENT_POST_PATTERN }}
       content_template_folder: ${{ vars.CONTENT_TEMPLATE_FOLDER }}
     secrets: inherit
@@ -79,6 +82,7 @@ jobs:
     with:
       environment: prd
       herald_mode: ${{ vars.HERALD_MODE_PRD || 'Dry' }}
+      content_repository: ${{ vars.CONTENT_REPOSITORY }}
       content_post_pattern: ${{ vars.CONTENT_POST_PATTERN }}
       content_template_folder: ${{ vars.CONTENT_TEMPLATE_FOLDER }}
     secrets: inherit

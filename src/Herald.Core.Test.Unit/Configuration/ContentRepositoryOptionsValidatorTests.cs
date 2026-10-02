@@ -6,6 +6,7 @@ namespace Herald.Core.Test.Unit.Configuration;
 
 public sealed class ContentRepositoryOptionsValidatorTests
 {
+    private const string Repository = "owner/blog";
     private const string PostPattern = "posts/*/linkedin/*.md";
     private const string TemplateFolder = "templates";
 
@@ -17,6 +18,65 @@ public sealed class ContentRepositoryOptionsValidatorTests
         var result = _validator.Validate(CreateOptions());
 
         result.IsValid.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void Options___Missing_Repository___Fails(string? repository)
+    {
+        var result = _validator.Validate(CreateOptions(repository: repository));
+
+        result.ShouldHaveSingleFailureFor(ContentRepositoryOptions.RepositorySettingName, "is missing");
+    }
+
+    [Theory]
+    [InlineData("blog")]
+    [InlineData("owner/blog/linkedin")]
+    [InlineData("/owner/blog")]
+    [InlineData("owner/blog.git")]
+    [InlineData("https://github.com/owner/blog")]
+    public void Options___Repository_Not_Owner_And_Name___Fails(string repository)
+    {
+        var result = _validator.Validate(CreateOptions(repository: repository));
+
+        result.ShouldHaveSingleFailureFor(ContentRepositoryOptions.RepositorySettingName, "'owner/name'");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void Options___Empty_Branch___Fails(string? branch)
+    {
+        var result = _validator.Validate(CreateOptions(branch: branch));
+
+        result.ShouldHaveSingleFailureFor(ContentRepositoryOptions.BranchSettingName, "is empty");
+    }
+
+    [Theory]
+    [InlineData("/main")]
+    [InlineData("main/")]
+    [InlineData("release/../main")]
+    [InlineData("my branch")]
+    public void Options___Branch_Not_A_Plain_Ref___Fails(string branch)
+    {
+        var result = _validator.Validate(CreateOptions(branch: branch));
+
+        result.ShouldHaveSingleFailureFor(ContentRepositoryOptions.BranchSettingName, "A branch is named");
+    }
+
+    [Fact]
+    public void Configuration___Missing_Branch___Binds_Default()
+    {
+        var options = Bind(new Dictionary<string, string?>
+        {
+            ["Herald:Content:Repository"] = Repository,
+            ["Herald:Content:PostPattern"] = PostPattern,
+            ["Herald:Content:TemplateFolder"] = TemplateFolder,
+        });
+
+        options.Branch.Should().Be(ContentRepositoryOptions.DefaultBranch);
+        _validator.Validate(options).IsValid.Should().BeTrue();
     }
 
     [Theory]
@@ -100,6 +160,7 @@ public sealed class ContentRepositoryOptionsValidatorTests
     {
         var options = Bind(new Dictionary<string, string?>
         {
+            ["Herald:Content:Repository"] = Repository,
             ["Herald:Content:PostPattern"] = PostPattern,
             ["Herald:Content:TemplateFolder"] = TemplateFolder,
         });
@@ -112,6 +173,7 @@ public sealed class ContentRepositoryOptionsValidatorTests
     {
         var options = Bind(new Dictionary<string, string?>
         {
+            ["Herald:Content:Repository"] = Repository,
             ["Herald:Content:PostPattern"] = PostPattern,
             ["Herald:Content:TemplateFolder"] = TemplateFolder,
             ["Herald:Content:CommitMessageSuffix"] = "",
@@ -122,11 +184,15 @@ public sealed class ContentRepositoryOptionsValidatorTests
     }
 
     private static ContentRepositoryOptions CreateOptions(
+        string? repository = Repository,
+        string? branch = ContentRepositoryOptions.DefaultBranch,
         string? postPattern = PostPattern,
         string? templateFolder = TemplateFolder,
         string? commitMessageSuffix = ContentRepositoryOptions.DefaultCommitMessageSuffix) =>
         new()
         {
+            Repository = repository,
+            Branch = branch,
             PostPattern = postPattern,
             TemplateFolder = templateFolder,
             CommitMessageSuffix = commitMessageSuffix,

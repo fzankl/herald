@@ -19,8 +19,10 @@ environment = "dev"
 # The workflows read it from that file, so it is normally not set here.
 app_version = "0.1.0"
 
-# Where herald finds posts and templates in the content repository. Required, no default.
-# The workflows pass the repository variables CONTENT_POST_PATTERN and CONTENT_TEMPLATE_FOLDER.
+# Which repository herald reads, and where it finds posts and templates in it. Required, no
+# default. The workflows pass the repository variables CONTENT_REPOSITORY, CONTENT_POST_PATTERN
+# and CONTENT_TEMPLATE_FOLDER.
+content_repository      = "owner/blog"
 content_post_pattern    = "posts/*/linkedin/*.md"
 content_template_folder = "templates"
 

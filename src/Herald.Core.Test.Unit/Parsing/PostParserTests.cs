@@ -548,6 +548,64 @@ public sealed class PostParserTests
         result.Errors.Should().HaveCount(3);
     }
 
+    [Fact]
+    public void Result___A_Target_With_Nothing_Under_It___Is_Not_Served_Yet()
+    {
+        var result = __parser.Parse(Slug, """
+            ---
+            status: approved
+            scheduled_at: "2026-09-01T08:00:00+02:00"
+            image: images/a-post.png
+            targets: [linkedin]
+            results:
+              linkedin:
+            ---
+            The post text.
+            """);
+
+        result.Errors.Should().BeEmpty();
+        result.Post!.Results.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Comment_Result___A_Comment_With_Nothing_Under_It___Is_Not_Posted_Yet()
+    {
+        var result = __parser.Parse(Slug, """
+            ---
+            status: approved
+            scheduled_at: "2026-09-01T08:00:00+02:00"
+            image: images/a-post.png
+            targets: [linkedin]
+            results:
+              linkedin:
+                status: published
+                urn: urn:li:activity:7500432297192607744
+                published_at: "2026-09-01T08:00:10+02:00"
+                comments:
+                  article:
+            ---
+            The post text.
+            """);
+
+        result.Errors.Should().BeEmpty();
+        result.Post!.Results["linkedin"].Comments.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Comment___An_Entry_With_Nothing_Under_It___Is_Rejected()
+    {
+        var result = __parser.Parse(Slug, """
+            ---
+            status: draft
+            comments:
+              -
+            ---
+            The post text.
+            """);
+
+        result.ShouldBeRejectedWith("'id'", "a comment has no");
+    }
+
     private static Post ParseValid(string content)
     {
         var result = __parser.Parse(Slug, content);

@@ -195,7 +195,9 @@ public sealed partial class PostParser : IPostParser
 
         foreach (var document in documents)
         {
-            if (string.IsNullOrWhiteSpace(document.Id))
+            // An entry with nothing under it parses to a null value, and it is named the same way a
+            // comment without an id is named, because that is what it is missing first.
+            if (string.IsNullOrWhiteSpace(document?.Id))
             {
                 errors.Add("a comment has no 'id'. The id is how its result is recorded.");
                 continue;
@@ -290,6 +292,15 @@ public sealed partial class PostParser : IPostParser
 
         foreach (var (target, document) in documents)
         {
+            // No status means the target has not been served yet, which is a state and not a fault:
+            // it is how a post waits for its turn, and a key with nothing under it parses to null
+            // as well. The entry is left out, so the post reads like one whose file does not name
+            // the target at all.
+            if (document?.Status is null)
+            {
+                continue;
+            }
+
             var status = ReadPublishStatus(document.Status, $"of target '{target}'", errors);
             if (status is null)
             {
@@ -329,6 +340,13 @@ public sealed partial class PostParser : IPostParser
         {
             var subject = $"comment '{id}' of target '{target}'";
 
+            // A comment without a status has not been posted yet, the same way a target without one
+            // has not been served yet.
+            if (document?.Status is null)
+            {
+                continue;
+            }
+
             var status = ReadPublishStatus(document.Status, $"of {subject}", errors);
             if (status is null)
             {
@@ -351,7 +369,9 @@ public sealed partial class PostParser : IPostParser
         return results;
     }
 
-    private static PublishStatus? ReadPublishStatus(string? value, string subject, List<string> errors)
+    // Only ever called with a status that is there: an absent one means not served yet and is
+    // handled by the caller, which has the entry to leave out.
+    private static PublishStatus? ReadPublishStatus(string value, string subject, List<string> errors)
     {
         switch (value)
         {
@@ -359,9 +379,6 @@ public sealed partial class PostParser : IPostParser
                 return PublishStatus.Published;
             case "failed":
                 return PublishStatus.Failed;
-            case null:
-                errors.Add($"the result {subject} has no 'status'. Allowed values: 'published', 'failed'.");
-                return null;
             default:
                 errors.Add($"the result {subject} has the unsupported status '{value}'. Allowed values: 'published', 'failed'.");
                 return null;

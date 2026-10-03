@@ -13,8 +13,13 @@ locals {
   application_insights_name = "appi-${local.suffix}"
   log_analytics_name        = "log-${local.suffix}"
   storage_account_name      = "st${local.suffix_compact}"
+  key_vault_name            = "kv-${local.suffix}"
 
   deployment_container_name = "deployments"
+
+  # The secret the content token is written to. The key vault reference in function.tf names it,
+  # so the app setting survives a rotation that writes a new version of the same secret.
+  content_token_secret_name = "github-content-token"
 
   tags = {
     workload    = var.workload

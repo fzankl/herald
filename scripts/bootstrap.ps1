@@ -511,16 +511,17 @@ Assert-RoleAssignment -PrincipalId $identityPrincipalId -PrincipalType ServicePr
 # because terraform destroy removes it again.
 Assert-RoleAssignment -PrincipalId $identityPrincipalId -PrincipalType ServicePrincipal `
     -Role 'Contributor' -Scope "/subscriptions/$subscriptionId"
-# function.tf assigns the storage roles of the function app identity, so the pipeline needs the
-# right to grant rights, which is close to a privilege escalation. The role therefore carries an
+# function.tf and vault.tf assign the roles of the function app identity, so the pipeline needs
+# the right to grant rights, which is close to a privilege escalation. The role therefore carries an
 # ABAC condition, which Azure calls constrained delegation: this identity may assign and remove
-# exactly the two storage roles function.tf needs, and only to service principals. It cannot grant
+# exactly the three roles the configuration needs, and only to service principals. It cannot grant
 # Owner and it cannot grant anything to a user.
 #
 # GUIDs, because the condition language takes role definition ids and not names:
 #   b7e6dc6d-f1e8-4753-8033-0f276bb0955b  Storage Blob Data Owner
 #   0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3  Storage Table Data Contributor
-$assignableRoles = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b, 0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+#   4633458b-17de-408a-b874-0445c86b69e6  Key Vault Secrets User
+$assignableRoles = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b, 0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3, 4633458b-17de-408a-b874-0445c86b69e6'
 $rbacCondition = @"
 ((!(ActionMatches{'Microsoft.Authorization/roleAssignments/write'})) OR (@Request[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {$assignableRoles} AND @Request[Microsoft.Authorization/roleAssignments:PrincipalType] ForAnyOfAnyValues:StringEqualsIgnoreCase {'ServicePrincipal'})) AND ((!(ActionMatches{'Microsoft.Authorization/roleAssignments/delete'})) OR (@Resource[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {$assignableRoles} AND @Resource[Microsoft.Authorization/roleAssignments:PrincipalType] ForAnyOfAnyValues:StringEqualsIgnoreCase {'ServicePrincipal'}))
 "@.Trim()

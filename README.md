@@ -152,6 +152,7 @@ Only a direct project restore runs the post-restore hook that generates the exte
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `Herald__Mode`                         | `Dry` (default in the template) or `Live`, matched case-insensitively. (Required)                                                         |
 | `Herald__Content__Repository`          | The content repository as `owner/name`. Reads and writes go through the GitHub REST API against this one repository. (Required)           |
+| `Herald__Content__Token`               | Access token of the content repository, a fine-grained token scoped to that one repository. A key vault reference in Azure. (Required)    |
 | `Herald__Content__Branch`              | Branch herald reads the posts from and writes its results back to. Defaults to `main`.                                                    |
 | `Herald__Content__PostPattern`         | Glob that selects the post files, relative to the repository root, ending in `.md`. A single `*` does not cross a `/`. (Required)         |
 | `Herald__Content__TemplateFolder`      | Folder that holds the comment templates, relative to the repository root. Files in it are never read as posts. (Required)                 |
@@ -175,7 +176,8 @@ terraform -chdir=deploy plan -var="environment=dev" -var="app_version=0.1.0"
 4. Add `AZURE_CLIENT_ID` as an environment secret on each stage, and `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` and `AZURE_PLAN_CLIENT_ID` as repository secrets. None of them is confidential, but secrets are redacted in workflow logs.
 5. Set the repository variables `CONTENT_REPOSITORY`, `CONTENT_POST_PATTERN` and `CONTENT_TEMPLATE_FOLDER` to the values of the three required content settings, and `DEPLOY_ENABLED` to `true`. Without `DEPLOY_ENABLED` `infra` and `deploy` skip every job.
 6. Merge to `main`. `infra` applies `dev`, then `prd`.
-7. Deploy the code once by hand, because `deploy` starts on its own only when `src/` or `build/` changes: `gh workflow run deploy.yml -f sha=<sha of main>`.
+7. Write the access token of the content repository into the vault of each stage. Terraform creates the vault and the function app's access to it and never the value, so this is the one step that handles the token: `az keyvault secret set --vault-name <key_vault_name from the terraform output> --name github-content-token --value <token>`. The command lands in the shell history, so use `--file` instead where that matters. The app reads the secret through a key vault reference and resolves it again after a rotation, as long as the secret keeps its name.
+8. Deploy the code once by hand, because `deploy` starts on its own only when `src/` or `build/` changes: `gh workflow run deploy.yml -f sha=<sha of main>`.
 
 Role assignments take a few minutes to become effective. If the first run fails in `terraform init` with an authorization error, run it again.
 

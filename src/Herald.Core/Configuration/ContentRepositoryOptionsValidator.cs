@@ -9,6 +9,7 @@ namespace Herald.Core.Configuration;
 public sealed class ContentRepositoryOptionsValidator : AbstractValidator<ContentRepositoryOptions>
 {
     private const string RepositorySetting = $"Application setting '{ContentRepositoryOptions.RepositorySettingName}'";
+    private const string TokenSetting = $"Application setting '{ContentRepositoryOptions.TokenSettingName}'";
     private const string BranchSetting = $"Application setting '{ContentRepositoryOptions.BranchSettingName}'";
     private const string PostPatternSetting = $"Application setting '{ContentRepositoryOptions.PostPatternSettingName}'";
     private const string TemplateFolderSetting = $"Application setting '{ContentRepositoryOptions.TemplateFolderSettingName}'";
@@ -24,6 +25,12 @@ public sealed class ContentRepositoryOptionsValidator : AbstractValidator<Conten
             .WithMessage($"{RepositorySetting} is missing. Example: 'owner/blog'.")
             .Must(repository => IsOwnerAndName(repository!))
             .WithMessage(options => $"{RepositorySetting} has the value '{options.Repository}'. It names the repository as 'owner/name', without a host, without a leading or trailing '/' and without '.git'.");
+
+        // The only rule without a message that quotes the value. A token in a start-up log is a
+        // leaked token, so this message names the setting and stops there.
+        RuleFor(options => options.Token)
+            .NotEmpty()
+            .WithMessage($"{TokenSetting} is missing. It holds the access token of the content repository and reaches the app as a key vault reference.");
 
         RuleFor(options => options.Branch)
             .NotEmpty()

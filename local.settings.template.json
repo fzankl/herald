@@ -5,6 +5,7 @@
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "Herald__Mode": "Dry",
     "Herald__Content__Repository": "owner/blog",
+    "Herald__Content__Token": "replace-with-a-fine-grained-token",
     "Herald__Content__PostPattern": "posts/*/linkedin/*.md",
     "Herald__Content__TemplateFolder": "templates"
   }

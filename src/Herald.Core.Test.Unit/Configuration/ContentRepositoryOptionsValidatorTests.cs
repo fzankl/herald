@@ -7,6 +7,7 @@ namespace Herald.Core.Test.Unit.Configuration;
 public sealed class ContentRepositoryOptionsValidatorTests
 {
     private const string Repository = "owner/blog";
+    private const string Token = "token-value-that-must-never-be-logged";
     private const string PostPattern = "posts/*/linkedin/*.md";
     private const string TemplateFolder = "templates";
 
@@ -46,6 +47,25 @@ public sealed class ContentRepositoryOptionsValidatorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
+    public void Options___Missing_Token___Fails(string? token)
+    {
+        var result = _validator.Validate(CreateOptions(token: token));
+
+        result.ShouldHaveSingleFailureFor(ContentRepositoryOptions.TokenSettingName, "is missing");
+    }
+
+    [Fact]
+    public void Options___Any_Failure___Never_Names_The_Token_Value()
+    {
+        var result = _validator.Validate(CreateOptions(repository: "no-owner"));
+
+        result.Errors.Should().NotBeEmpty();
+        result.Errors.Should().AllSatisfy(failure => failure.ErrorMessage.Should().NotContain(Token));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
     public void Options___Empty_Branch___Fails(string? branch)
     {
         var result = _validator.Validate(CreateOptions(branch: branch));
@@ -71,6 +91,7 @@ public sealed class ContentRepositoryOptionsValidatorTests
         var options = Bind(new Dictionary<string, string?>
         {
             ["Herald:Content:Repository"] = Repository,
+            ["Herald:Content:Token"] = Token,
             ["Herald:Content:PostPattern"] = PostPattern,
             ["Herald:Content:TemplateFolder"] = TemplateFolder,
         });
@@ -161,6 +182,7 @@ public sealed class ContentRepositoryOptionsValidatorTests
         var options = Bind(new Dictionary<string, string?>
         {
             ["Herald:Content:Repository"] = Repository,
+            ["Herald:Content:Token"] = Token,
             ["Herald:Content:PostPattern"] = PostPattern,
             ["Herald:Content:TemplateFolder"] = TemplateFolder,
         });
@@ -174,6 +196,7 @@ public sealed class ContentRepositoryOptionsValidatorTests
         var options = Bind(new Dictionary<string, string?>
         {
             ["Herald:Content:Repository"] = Repository,
+            ["Herald:Content:Token"] = Token,
             ["Herald:Content:PostPattern"] = PostPattern,
             ["Herald:Content:TemplateFolder"] = TemplateFolder,
             ["Herald:Content:CommitMessageSuffix"] = "",
@@ -185,6 +208,7 @@ public sealed class ContentRepositoryOptionsValidatorTests
 
     private static ContentRepositoryOptions CreateOptions(
         string? repository = Repository,
+        string? token = Token,
         string? branch = ContentRepositoryOptions.DefaultBranch,
         string? postPattern = PostPattern,
         string? templateFolder = TemplateFolder,
@@ -192,6 +216,7 @@ public sealed class ContentRepositoryOptionsValidatorTests
         new()
         {
             Repository = repository,
+            Token = token,
             Branch = branch,
             PostPattern = postPattern,
             TemplateFolder = templateFolder,

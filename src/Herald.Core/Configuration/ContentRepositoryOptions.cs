@@ -12,6 +12,7 @@ public sealed class ContentRepositoryOptions
 
     private const string SettingPrefix = $"{SectionNames.Root}__Content__";
     public const string RepositorySettingName = $"{SettingPrefix}{nameof(Repository)}";
+    public const string TokenSettingName = $"{SettingPrefix}{nameof(Token)}";
     public const string BranchSettingName = $"{SettingPrefix}{nameof(Branch)}";
     public const string PostPatternSettingName = $"{SettingPrefix}{nameof(PostPattern)}";
     public const string TemplateFolderSettingName = $"{SettingPrefix}{nameof(TemplateFolder)}";
@@ -22,6 +23,13 @@ public sealed class ContentRepositoryOptions
     /// go through the GitHub REST API against this one repository and no other.
     /// </summary>
     public string? Repository { get; init; }
+
+    /// <summary>
+    /// Access token for the content repository, a fine-grained token scoped to that one repository.
+    /// It reaches the app as a key vault reference, so the value is never in this repository, in the
+    /// pipeline or in the Terraform state.
+    /// </summary>
+    public string? Token { get; init; }
 
     /// <summary>
     /// The branch herald reads the posts from and writes its results back to. Defaults to

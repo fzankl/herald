@@ -98,13 +98,13 @@ jobs:
             exit 1
           fi
 
-          # The runner redacts only values it knows. The key calls RunNow, so it is registered as a mask
+          # The runner redacts only values it knows. The key calls ReportVersion, so it is registered as a mask
           # before anything could print it.
           echo "::add-mask::${key}"
 
           for attempt in 1 2 3 4 5 6; do
             body="$(curl -sS --max-time 30 -H "x-functions-key: ${key}" \
-              "https://${HOSTNAME}/api/RunNow" || true)"
+              "https://${HOSTNAME}/api/ReportVersion" || true)"
             if grep -q "${DEPLOY_SHA}" <<<"${body}"; then
               echo "smoke test passed on ${{ inputs.environment }}: ${body}"
               exit 0
@@ -113,5 +113,5 @@ jobs:
             sleep 15
           done
 
-          echo "smoke test failed: RunNow on ${{ inputs.environment }} did not report version ${DEPLOY_SHA}" >&2
+          echo "smoke test failed: ReportVersion on ${{ inputs.environment }} did not report version ${DEPLOY_SHA}" >&2
           exit 1

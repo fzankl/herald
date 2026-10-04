@@ -63,9 +63,6 @@ internal static class FrontMatter
 
     private static bool IsDelimiter(ReadOnlySpan<char> line) => line.TrimEnd('\r').SequenceEqual(Delimiter);
 
-    /// <summary>
-    /// Splitting file result types.
-    /// </summary>
     internal enum SplitResultType
     {
         /// <summary>

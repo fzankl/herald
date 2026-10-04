@@ -1,20 +1,39 @@
+using Herald.Core.Publishing;
 using Microsoft.Azure.Functions.Worker;
 
 namespace Herald.Functions.Functions;
 
 /// <summary>
-/// Ten-minute timer that will publish due posts and their comments. In v0.1 it only records
-/// that it ran, which is the raw material for the per-function scaling observation.
+/// Ten-minute timer that will publish due posts and their comments.
 /// </summary>
 public sealed class PublishScheduledPosts
 {
     private readonly ILogger<PublishScheduledPosts> _logger;
+    private readonly IPublishRun _publishRun;
 
-    public PublishScheduledPosts(ILogger<PublishScheduledPosts> logger) => _logger = logger;
+    public PublishScheduledPosts(IPublishRun publishRun, ILogger<PublishScheduledPosts> logger)
+    {
+        _publishRun = publishRun;
+        _logger = logger;
+    }
 
     [Function(nameof(PublishScheduledPosts))]
-    public void Run([TimerTrigger("0 */10 * * * *")] TimerInfo timerInfo)
+    public async Task Run([TimerTrigger("0 */10 * * * *")] TimerInfo _, CancellationToken cancellationToken)
     {
         _logger.Started(nameof(PublishScheduledPosts), DateTimeOffset.UtcNow);
+
+        var report = await _publishRun.RunAsync(cancellationToken);
+
+        _logger.RunFinished(report.FilesInRepository, report.Posts.Count, report.Rejected, report.Warnings.Count);
+
+        foreach (var post in report.Posts.Where(post => post.Errors.Count > 0))
+        {
+            _logger.PostRejected(post.Slug, string.Join(" ", post.Errors));
+        }
+
+        foreach (var warning in report.Warnings)
+        {
+            _logger.SelectionWarning(warning);
+        }
     }
 }

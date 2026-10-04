@@ -195,8 +195,8 @@ public sealed partial class PostParser : IPostParser
 
         foreach (var document in documents)
         {
-            // An entry with nothing under it parses to a null value, and it is named the same way a
-            // comment without an id is named, because that is what it is missing first.
+            // An entry with nothing under it parses to a null value, and it is named the same
+            // way a comment without an id is named, because that is what it is missing first.
             if (string.IsNullOrWhiteSpace(document?.Id))
             {
                 errors.Add("a comment has no 'id'. The id is how its result is recorded.");

@@ -39,7 +39,7 @@ public sealed class PostFileSelector : IPostFileSelector
 
             if (group.Count() > 1)
             {
-                // Every file of the group is left out. Which one a series means is not a guess herald makes.
+                // Which one a series means is not a guess herald makes.
                 warnings.Add($"the slug '{slug}' is used by more than one file: {string.Join(", ", group.Select(path => $"'{path}'"))}. None of them is read.");
                 continue;
             }

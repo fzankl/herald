@@ -87,11 +87,12 @@ Reads and writes go through the GitHub REST API with a fine-grained token scoped
 
 The three functions use three different triggers, which is what makes per-function scaling on Flex Consumption visible:
 
-| Function                | Trigger                              | Purpose                                     |
-| ----------------------- | ------------------------------------ | ------------------------------------------- |
-| `PublishScheduledPosts` | timer, `0 */10 * * * *`              | publish due posts and their comments        |
-| `CheckTokenExpiry`      | timer, `0 0 6 * * *`                 | warn before the access tokens expire        |
-| `RunNow`                | HTTP, authorization level `Function` | run the same pass on demand, return its log |
+| Function                | Trigger                              | Purpose                                           |
+| ----------------------- | ------------------------------------ | ------------------------------------------------- |
+| `PublishScheduledPosts` | timer, `0 */10 * * * *`              | publish due posts and their comments              |
+| `CheckTokenExpiry`      | timer, `0 0 6 * * *`                 | warn before the access tokens expire              |
+| `RunNow`                | HTTP, authorization level `Function` | carry out a run on demand, return its report      |
+| `ReportVersion`         | HTTP, authorization level `Function` | report which code is deployed, for the smoke test |
 
 All schedules are UTC: Flex Consumption does not support `WEBSITE_TIME_ZONE` or `TZ`.
 
@@ -121,16 +122,19 @@ dotnet run
 
 `dotnet run` is the entry point with `Azure.Functions.Sdk`. It starts the Functions host when Core Tools is installed.
 
-The template sets `Herald__Mode` to `Dry` and fills in the content settings. Removing a required setting, or giving it an invalid value, makes the app fail at start-up with a message naming the setting.
+The template sets `Herald__Mode` to `Dry` and fills in the content settings with example values. Replace `Herald__Content__Repository`, `Herald__Content__PostPattern` and `Herald__Content__TemplateFolder` with the values of the repository variables `CONTENT_REPOSITORY`, `CONTENT_POST_PATTERN` and `CONTENT_TEMPLATE_FOLDER`, and `Herald__Content__Token` with a fine-grained token for that repository.
+Removing a required setting, or giving it an invalid value, makes the app fail at start-up with a message naming the setting.
 That is deliberate, because a failed start on Flex Consumption offers no other diagnosis.
 
 `local.settings.json` is in `.gitignore` and never holds a real token in a committed file.
 
-Call the HTTP trigger:
+Carry out a run against the content repository and read what it found:
 
 ```bash
-curl http://localhost:7071/api/RunNow
+curl "http://localhost:7071/api/RunNow"
 ```
+
+The timer carries out the same run every ten minutes, so what you see here is what a scheduled run does. `ReportVersion` is the other HTTP trigger and answers which code is deployed; it reads no content repository, which is why the deployment smoke test calls that one and not this.
 
 ## Building
 
@@ -205,7 +209,7 @@ A pull request plan runs without a lock and without a refresh, so it shows no dr
 | `infra`  | `deploy/`, the infra workflows, `build/Directory.Build.props`       | plan both stages on a pull request, apply `dev` then `prd` on `main` |
 | `deploy` | green `ci` on `main` with changes in `src/` or `build/`, manual run | deploy to `dev`, smoke-test, then the same for `prd`                 |
 
-The smoke test checks that `RunNow` reports the commit it just deployed. A rollback is a manual `deploy` run with the SHA of the last green commit.
+The smoke test checks that `ReportVersion` reports the commit it just deployed. A rollback is a manual `deploy` run with the SHA of the last green commit.
 Every resource carries a `version` tag with the release version from `build/Directory.Build.props`.
 Both stages run with `Herald__Mode` set to `Dry`. To publish from `prd`, set the repository variable `HERALD_MODE_PRD` to `Live` and run `infra`.
 

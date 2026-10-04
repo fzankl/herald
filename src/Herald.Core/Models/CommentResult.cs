@@ -4,7 +4,7 @@ namespace Herald.Core.Models;
 /// What herald recorded for one comment on one target, from
 /// <c>results.&lt;target&gt;.comments.&lt;id&gt;</c>.
 /// </summary>
-public sealed record CommentResult
+internal sealed record CommentResult
 {
     public required PublishStatus Status { get; init; }
 

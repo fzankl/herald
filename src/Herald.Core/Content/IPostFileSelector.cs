@@ -4,7 +4,7 @@ namespace Herald.Core.Content;
 /// Picks the post files out of the paths of the content repository and gives each one its slug.
 /// It works on paths alone, so every rule here can be tested with a list of strings.
 /// </summary>
-public interface IPostFileSelector
+internal interface IPostFileSelector
 {
     /// <summary>
     /// Selects the post files among <paramref name="paths"/>.

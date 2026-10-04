@@ -4,7 +4,7 @@ namespace Herald.Core.Models;
 /// One post file: what the author wrote in the front matter and the body below it, plus what
 /// herald recorded per target.
 /// </summary>
-public sealed record Post
+internal sealed record Post
 {
     /// <summary>
     /// The file name without <c>.md</c>, unique across the content repository.

@@ -4,7 +4,7 @@ namespace Herald.Core.Content;
 /// Read access to the content repository. It knows about files and paths and nothing about posts,
 /// so what it returns is what <see cref="IPostFileSelector"/> and the parser work on.
 /// </summary>
-public interface IContentRepository
+internal interface IContentRepository
 {
     /// <summary>
     /// The repository-relative paths of every file on the configured branch, in one request.

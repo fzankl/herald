@@ -6,7 +6,7 @@ namespace Herald.Core.Parsing;
 /// The outcome of reading one post file. A file either yields a post or a list of reasons why it
 /// does not, so that one bad file is reported and skipped instead of ending the run.
 /// </summary>
-public sealed record PostParseResult
+internal sealed record PostParseResult
 {
     private PostParseResult(Post? post, IReadOnlyList<string> errors)
     {

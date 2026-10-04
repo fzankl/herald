@@ -6,7 +6,7 @@ namespace Herald.Core.Models;
 /// <see cref="TemplatePostComment"/>. A comment carries no result, because what herald published
 /// lives in <see cref="TargetResult.Comments"/>, keyed by <see cref="Id"/>.
 /// </summary>
-public abstract record PostComment
+internal abstract record PostComment
 {
     private protected PostComment()
     {

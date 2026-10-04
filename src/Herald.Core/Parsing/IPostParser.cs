@@ -6,7 +6,7 @@ namespace Herald.Core.Parsing;
 /// Reads one post file into a <see cref="Post"/>, or into the reasons why it is rejected. It knows
 /// nothing about git, HTTP or the clock, so every rule here can be tested with a string.
 /// </summary>
-public interface IPostParser
+internal interface IPostParser
 {
     /// <summary>
     /// Reads <paramref name="content"/>, the whole file including its front matter.

@@ -9,7 +9,7 @@ using YamlDotNet.Serialization.NamingConventions;
 namespace Herald.Core.Parsing;
 
 /// <inheritdoc />
-public sealed partial class PostParser : IPostParser
+internal sealed partial class PostParser : IPostParser
 {
     private const string TypeValue = "post";
 

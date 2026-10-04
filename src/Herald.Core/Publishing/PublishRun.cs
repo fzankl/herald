@@ -5,7 +5,7 @@ using Refit;
 namespace Herald.Core.Publishing;
 
 /// <inheritdoc />
-public sealed class PublishRun : IPublishRun
+internal sealed class PublishRun : IPublishRun
 {
     private readonly IContentRepository _repository;
     private readonly IPostFileSelector _selector;

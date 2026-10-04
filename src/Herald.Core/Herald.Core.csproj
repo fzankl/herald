@@ -4,6 +4,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The implementations below the interfaces are internal. The unit tests build them directly,
+         which is the one place outside this assembly that has to see them. -->
+    <InternalsVisibleTo Include="Herald.Core.Test.Unit" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
     <PackageReference Include="Microsoft.Extensions.Options" />

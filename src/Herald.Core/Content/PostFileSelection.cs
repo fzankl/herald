@@ -3,7 +3,7 @@ namespace Herald.Core.Content;
 /// <summary>
 /// The post files of one content repository.
 /// </summary>
-public sealed record PostFileSelection
+internal sealed record PostFileSelection
 {
     internal PostFileSelection(IReadOnlyList<PostFile> files, IReadOnlyList<string> warnings)
     {

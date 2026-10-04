@@ -9,7 +9,7 @@ namespace Herald.Core.Configuration;
 /// never as attributes on the options model.
 /// </summary>
 /// <typeparam name="TOptions">The options type being validated.</typeparam>
-public sealed class FluentValidateOptions<TOptions> : IValidateOptions<TOptions>
+internal sealed class FluentValidateOptions<TOptions> : IValidateOptions<TOptions>
     where TOptions : class
 {
     private readonly string _name;

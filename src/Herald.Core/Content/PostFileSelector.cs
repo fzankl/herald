@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 namespace Herald.Core.Content;
 
 /// <inheritdoc />
-public sealed class PostFileSelector : IPostFileSelector
+internal sealed class PostFileSelector : IPostFileSelector
 {
     private readonly ContentRepositoryOptions _options;
 

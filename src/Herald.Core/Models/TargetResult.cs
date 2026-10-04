@@ -4,7 +4,7 @@ namespace Herald.Core.Models;
 /// What herald recorded for one target, from <c>results.&lt;target&gt;</c>. Every field in here
 /// belongs to herald, and a write-back replaces the block as a whole.
 /// </summary>
-public sealed record TargetResult
+internal sealed record TargetResult
 {
     public required PublishStatus Status { get; init; }
 

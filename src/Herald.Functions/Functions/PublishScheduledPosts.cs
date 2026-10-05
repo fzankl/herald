@@ -24,7 +24,13 @@ public sealed class PublishScheduledPosts
 
         var report = await _publishRun.RunAsync(cancellationToken);
 
-        _logger.RunFinished(report.FilesInRepository, report.Posts.Count, report.Rejected, report.Warnings.Count);
+        _logger.RunFinished(
+            report.FilesInRepository,
+            report.Posts.Count,
+            report.Due,
+            report.Overdue,
+            report.Rejected,
+            report.Warnings.Count);
 
         foreach (var post in report.Posts.Where(post => post.Errors.Count > 0))
         {

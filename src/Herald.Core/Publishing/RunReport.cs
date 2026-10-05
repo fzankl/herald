@@ -19,4 +19,15 @@ public sealed record RunReport
     public required IReadOnlyList<string> Warnings { get; init; }
 
     public int Rejected => Posts.Count(post => post.Errors.Count > 0);
+
+    /// <summary>
+    /// How many posts would be published now.
+    /// The first number to read before a run goes live.
+    /// </summary>
+    public int Due => Posts.Count(post => post.Due is PostDue.Due);
+
+    /// <summary>
+    /// How many posts herald leaves alone because their time passed too long ago.
+    /// </summary>
+    public int Overdue => Posts.Count(post => post.Due is PostDue.Overdue);
 }

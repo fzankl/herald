@@ -155,6 +155,7 @@ Only a direct project restore runs the post-restore hook that generates the exte
 | Setting                                | Meaning                                                                                                                                   |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `Herald__Mode`                         | `Dry` (default in the template) or `Live`, matched case-insensitively. (Required)                                                         |
+| `Herald__OverdueLimit`                 | How long a post stays due after its time has passed, as a TimeSpan such as `24:00:00`. Defaults to 24 hours.                             |
 | `Herald__Content__Repository`          | The content repository as `owner/name`. Reads and writes go through the GitHub REST API against this one repository. (Required)           |
 | `Herald__Content__Token`               | Access token of the content repository, a fine-grained token scoped to that one repository. A key vault reference in Azure. (Required)    |
 | `Herald__Content__Branch`              | Branch herald reads the posts from and writes its results back to. Defaults to `main`.                                                    |

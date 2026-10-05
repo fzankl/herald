@@ -11,6 +11,9 @@ namespace Herald.Core.Test.Unit.Publishing;
 
 public sealed class PublishRunTests
 {
+    // The approved posts below are scheduled for this moment, so they count as due.
+    private static readonly DateTimeOffset __now = new(2026, 9, 1, 7, 0, 0, TimeSpan.Zero);
+
     private const string Approved = """
         ---
         status: approved
@@ -47,6 +50,10 @@ public sealed class PublishRunTests
         post.Slug.Should().Be("2026-09-01-a-post");
         post.Status.Should().Be(PostStatus.Approved);
         post.Errors.Should().BeEmpty();
+        post.Due.Should().Be(PostDue.Due);
+        post.Targets.Should().Equal("linkedin");
+        post.DueTargets.Should().Equal("linkedin");
+        report.Due.Should().Be(1);
     }
 
     [Fact]
@@ -86,7 +93,7 @@ public sealed class PublishRunTests
             .Which.Errors.Should().ContainSingle().Which.Should().Contain("404");
     }
 
-    private static IPublishRun Create(Dictionary<string, string> files, string? unreadable = null)
+    private static PublishRun Create(Dictionary<string, string> files, string? unreadable = null)
     {
         var options = Options.Create(new ContentRepositoryOptions
         {
@@ -99,7 +106,8 @@ public sealed class PublishRunTests
         return new PublishRun(
             new FakeContentRepository(files, unreadable),
             new PostFileSelector(options),
-            new PostParser());
+            new PostParser(),
+            new PublishSchedule(new FixedTimeProvider(__now), Options.Create(new RunOptions { Mode = RunMode.Dry })));
     }
 
     private sealed class FakeContentRepository : IContentRepository

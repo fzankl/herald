@@ -10,12 +10,18 @@ internal sealed class PublishRun : IPublishRun
     private readonly IContentRepository _repository;
     private readonly IPostFileSelector _selector;
     private readonly IPostParser _parser;
+    private readonly PublishSchedule _schedule;
 
-    public PublishRun(IContentRepository repository, IPostFileSelector selector, IPostParser parser)
+    public PublishRun(
+        IContentRepository repository,
+        IPostFileSelector selector,
+        IPostParser parser,
+        PublishSchedule schedule)
     {
         _repository = repository;
         _selector = selector;
         _parser = parser;
+        _schedule = schedule;
     }
 
     /// <inheritdoc />
@@ -62,13 +68,27 @@ internal sealed class PublishRun : IPublishRun
 
         var result = _parser.Parse(file.Slug, content);
 
+        if (result.Post is null)
+        {
+            return new RunEntry
+            {
+                Slug = file.Slug,
+                Path = file.Path,
+                Errors = result.Errors
+            };
+        }
+
+        var (due, targets) = _schedule.Evaluate(result.Post);
+
         return new RunEntry
         {
             Slug = file.Slug,
             Path = file.Path,
-            Status = result.Post?.Status,
-            ScheduledAt = result.Post?.ScheduledAt,
-            Errors = result.Errors,
+            Status = result.Post.Status,
+            ScheduledAt = result.Post.ScheduledAt,
+            Targets = result.Post.Targets,
+            Due = due,
+            DueTargets = targets,
         };
     }
 }

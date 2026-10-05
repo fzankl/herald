@@ -17,6 +17,24 @@ public sealed record RunEntry
     public DateTimeOffset? ScheduledAt { get; init; }
 
     /// <summary>
+    /// What a run would do with the post now.
+    /// Null when the file was rejected.
+    /// </summary>
+    public PostDue? Due { get; init; }
+
+    /// <summary>
+    /// The targets the post names. Stands next to <see cref="DueTargets"/> so that an empty one of
+    /// those reads as a question of timing and not as a post without a target.
+    /// </summary>
+    public IReadOnlyList<string> Targets { get; init; } = [];
+
+    /// <summary>
+    /// The targets that would be served now. Empty unless <see cref="Due"/> is
+    /// <see cref="PostDue.Due"/>.
+    /// </summary>
+    public IReadOnlyList<string> DueTargets { get; init; } = [];
+
+    /// <summary>
     /// Why the file did not become a post. Empty when it did.
     /// </summary>
     public IReadOnlyList<string> Errors { get; init; } = [];

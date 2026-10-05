@@ -9,6 +9,7 @@ namespace Herald.Core.Configuration;
 public sealed class RunOptionsValidator : AbstractValidator<RunOptions>
 {
     private const string Setting = $"Application setting '{RunOptions.ModeSettingName}'";
+    private const string OverdueLimitSetting = $"Application setting '{RunOptions.OverdueLimitSettingName}'";
     private const string AllowedValues = $"Allowed values: '{nameof(RunMode.Dry)}', '{nameof(RunMode.Live)}'.";
 
     public RunOptionsValidator()
@@ -18,5 +19,9 @@ public sealed class RunOptionsValidator : AbstractValidator<RunOptions>
             .WithMessage($"{Setting} is missing. {AllowedValues}")
             .IsInEnum()
             .WithMessage(options => $"{Setting} has the unsupported value '{options.Mode}'. {AllowedValues}");
+
+        RuleFor(options => options.OverdueLimit)
+            .GreaterThan(TimeSpan.Zero)
+            .WithMessage(options => $"{OverdueLimitSetting} has the value '{options.OverdueLimit}'. It is how long a post stays due after its time, so it has to be positive. Leave the setting out to use '{RunOptions.DefaultOverdueLimit}'.");
     }
 }

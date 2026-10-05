@@ -14,8 +14,8 @@ An Azure Function, named after the messenger who announces at a fixed hour.
 
 ## Status
 
-`v0.1` is the function app skeleton: three functions that only log that they started, so that per-function scaling on Flex Consumption can be observed.
-The publisher itself (front matter parser, scheduler, target clients) follows in later phases.
+`v0.2` reads the content repository and reports what a run would do: it selects the post files from the git tree, parses their front matter, and says per post whether a target is due, still scheduled, overdue or already served. Nothing is published and nothing is written back.
+What follows is the write-back of the results, the rendering per target, and the target clients themselves.
 
 ## Why this exists
 
@@ -170,7 +170,7 @@ Only the `infra` workflow applies it. Locally there is `terraform plan` and noth
 
 ```bash
 terraform -chdir=deploy init -backend-config="key=herald-dev.tfstate"
-terraform -chdir=deploy plan -var="environment=dev" -var="app_version=0.1.0"
+terraform -chdir=deploy plan -var="environment=dev" -var="app_version=0.2.0"
 ```
 
 ### Setting up

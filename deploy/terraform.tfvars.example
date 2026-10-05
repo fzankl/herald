@@ -17,7 +17,7 @@ environment = "dev"
 
 # Release version from build/Directory.Build.props, written to the version tag of every resource.
 # The workflows read it from that file, so it is normally not set here.
-app_version = "0.1.0"
+app_version = "0.2.0"
 
 # Which repository herald reads, and where it finds posts and templates in it. Required, no
 # default. The workflows pass the repository variables CONTENT_REPOSITORY, CONTENT_POST_PATTERN

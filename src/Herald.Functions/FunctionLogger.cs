@@ -1,3 +1,5 @@
+using Herald.Core.Tokens;
+
 namespace Herald.Functions;
 
 internal static partial class FunctionLogger
@@ -25,4 +27,16 @@ internal static partial class FunctionLogger
         Level = LogLevel.Warning,
         Message = "{Warning}")]
     internal static partial void SelectionWarning(this ILogger logger, string warning);
+
+    [LoggerMessage(
+        EventId = 300,
+        Level = LogLevel.Information,
+        Message = "Tokens checked: {Tokens} tokens, {Warned} need attention")]
+    internal static partial void TokensChecked(this ILogger logger, int tokens, int warned);
+
+    [LoggerMessage(
+        EventId = 301,
+        Level = LogLevel.Warning,
+        Message = "The {Name} is {State}, expires at {ExpiresAt:O}, issue opened: {IssueOpened}")]
+    internal static partial void TokenNeedsAttention(this ILogger logger, string name, TokenState state, DateTimeOffset? expiresAt, bool issueOpened);
 }

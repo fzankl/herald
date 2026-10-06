@@ -10,6 +10,7 @@ public sealed class RunOptions
     public const string SectionName = SectionNames.Root;
     public const string ModeSettingName = $"{SectionNames.Root}__{nameof(Mode)}";
     public const string OverdueLimitSettingName = $"{SectionNames.Root}__{nameof(OverdueLimit)}";
+    public const string TokenExpiryWarningSettingName = $"{SectionNames.Root}__{nameof(TokenExpiryWarning)}";
 
     /// <summary>
     /// How long a post stays due after its time has passed. A run that has been down for longer
@@ -18,6 +19,12 @@ public sealed class RunOptions
     /// author makes it by setting a new time.
     /// </summary>
     public static readonly TimeSpan DefaultOverdueLimit = TimeSpan.FromHours(24);
+
+    /// <summary>
+    /// How long before a token expires herald starts warning. Long enough to issue a new one
+    /// without hurry, short enough that the issue is not opened and forgotten.
+    /// </summary>
+    public static readonly TimeSpan DefaultTokenExpiryWarning = TimeSpan.FromDays(30);
 
     /// <summary>
     /// Nullable on purpose: it is what separates a missing setting from an explicit
@@ -31,6 +38,11 @@ public sealed class RunOptions
     /// wider window once, not because the value is expected to differ per stage.
     /// </summary>
     public TimeSpan OverdueLimit { get; init; } = DefaultOverdueLimit;
+
+    /// <summary>
+    /// Defaults to <see cref="DefaultTokenExpiryWarning"/>.
+    /// </summary>
+    public TimeSpan TokenExpiryWarning { get; init; } = DefaultTokenExpiryWarning;
 
     public bool IsLive => Mode is RunMode.Live;
 }

@@ -1,3 +1,4 @@
+using Herald.Core.Content.GitHub.Requests;
 using Herald.Core.Content.GitHub.Responses;
 using Refit;
 
@@ -28,4 +29,23 @@ internal interface IGitHubApi
         string path,
         [AliasAs("ref")] string branch,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Asks for the repository and keeps only the answer's headers. It is the cheapest authenticated
+    /// request there is, and GitHub puts the expiry of the token that made it into every one.
+    /// </summary>
+    [Get("/repos/{owner}/{name}")]
+    Task<IApiResponse> HeadRepositoryAsync(string owner, string name, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The open issues of the repository, used to recognise a warning herald opened before.
+    /// </summary>
+    [Get("/repos/{owner}/{name}/issues?state=open&per_page=100")]
+    Task<IReadOnlyList<IssueResponse>> GetOpenIssuesAsync(string owner, string name, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Needs the 'Issues: write' permission on the token.
+    /// </summary>
+    [Post("/repos/{owner}/{name}/issues")]
+    Task<IssueResponse> CreateIssueAsync(string owner, string name, [Body] NewIssue issue, CancellationToken cancellationToken);
 }

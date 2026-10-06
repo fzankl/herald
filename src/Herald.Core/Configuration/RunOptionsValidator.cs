@@ -10,6 +10,7 @@ public sealed class RunOptionsValidator : AbstractValidator<RunOptions>
 {
     private const string Setting = $"Application setting '{RunOptions.ModeSettingName}'";
     private const string OverdueLimitSetting = $"Application setting '{RunOptions.OverdueLimitSettingName}'";
+    private const string TokenExpiryWarningSetting = $"Application setting '{RunOptions.TokenExpiryWarningSettingName}'";
     private const string AllowedValues = $"Allowed values: '{nameof(RunMode.Dry)}', '{nameof(RunMode.Live)}'.";
 
     public RunOptionsValidator()
@@ -23,5 +24,9 @@ public sealed class RunOptionsValidator : AbstractValidator<RunOptions>
         RuleFor(options => options.OverdueLimit)
             .GreaterThan(TimeSpan.Zero)
             .WithMessage(options => $"{OverdueLimitSetting} has the value '{options.OverdueLimit}'. It is how long a post stays due after its time, so it has to be positive. Leave the setting out to use '{RunOptions.DefaultOverdueLimit}'.");
+
+        RuleFor(options => options.TokenExpiryWarning)
+            .GreaterThan(TimeSpan.Zero)
+            .WithMessage(options => $"{TokenExpiryWarningSetting} has the value '{options.TokenExpiryWarning}'. It is how long before a token expires herald warns, so it has to be positive. Leave the setting out to use '{RunOptions.DefaultTokenExpiryWarning}'.");
     }
 }

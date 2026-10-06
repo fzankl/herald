@@ -90,7 +90,7 @@ The three functions use three different triggers, which is what makes per-functi
 | Function                | Trigger                              | Purpose                                           |
 | ----------------------- | ------------------------------------ | ------------------------------------------------- |
 | `PublishScheduledPosts` | timer, `0 */10 * * * *`              | publish due posts and their comments              |
-| `CheckTokenExpiry`      | timer, `0 0 6 * * *`                 | warn before the access tokens expire              |
+| `CheckTokenExpiry`      | timer, `0 0 6 * * *`                 | open an issue before an access token expires      |
 | `RunNow`                | HTTP, authorization level `Function` | carry out a run on demand, return its report      |
 | `ReportVersion`         | HTTP, authorization level `Function` | report which code is deployed, for the smoke test |
 
@@ -156,6 +156,7 @@ Only a direct project restore runs the post-restore hook that generates the exte
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `Herald__Mode`                         | `Dry` (default in the template) or `Live`, matched case-insensitively. (Required)                                                         |
 | `Herald__OverdueLimit`                 | How long a post stays due after its time has passed, as a TimeSpan such as `24:00:00`. Defaults to 24 hours.                             |
+| `Herald__TokenExpiryWarning`           | How long before a token expires herald opens an issue about it, as a TimeSpan such as `30.00:00:00`. Defaults to 30 days.                |
 | `Herald__Content__Repository`          | The content repository as `owner/name`. Reads and writes go through the GitHub REST API against this one repository. (Required)           |
 | `Herald__Content__Token`               | Access token of the content repository, a fine-grained token scoped to that one repository. A key vault reference in Azure. (Required)    |
 | `Herald__Content__Branch`              | Branch herald reads the posts from and writes its results back to. Defaults to `main`.                                                    |

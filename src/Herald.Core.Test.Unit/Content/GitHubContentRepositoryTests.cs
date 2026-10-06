@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 using Herald.Core.Configuration;
 using Herald.Core.Content;
 using Microsoft.Extensions.DependencyInjection;
@@ -122,37 +121,5 @@ public sealed class GitHubContentRepositoryTests
         services.AddHeraldCore(client => client.ConfigurePrimaryHttpMessageHandler(() => handler));
 
         return (services.BuildServiceProvider().GetRequiredService<IContentRepository>(), handler);
-    }
-
-    /// <summary>
-    /// Answers every request from a function instead of from the network, and keeps the last request,
-    /// so that a test can assert on the url and the headers herald sent.
-    /// </summary>
-    private sealed class StubHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _respond;
-
-        private StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) => _respond = respond;
-
-        public HttpRequestMessage? LastRequest { get; private set; }
-
-        public static StubHttpMessageHandler Returning(string body, HttpStatusCode status = HttpStatusCode.OK) =>
-            new(_ => new HttpResponseMessage(status)
-            {
-                Content = new StringContent(body, Encoding.UTF8, "application/json")
-            });
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            LastRequest = request;
-
-            var response = _respond(request);
-
-            // Refit builds its exception from the request behind the response, so a stub that leaves it
-            // unset turns every error case into a confusing InvalidOperationException.
-            response.RequestMessage = request;
-
-            return Task.FromResult(response);
-        }
     }
 }

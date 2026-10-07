@@ -3,6 +3,7 @@ using Herald.Core.Content.GitHub;
 using Herald.Core.Parsing;
 using Herald.Core.Publishing;
 using Herald.Core.Tokens;
+using Herald.Core.Writing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Refit;
@@ -40,6 +41,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<PublishSchedule>();
         services.AddTransient<IContentRepository, GitHubContentRepository>();
+        services.AddSingleton<IPostWriter, PostWriter>();
         services.AddTransient<IPublishRun, PublishRun>();
 
         services.AddTransient<IIssueTracker, GitHubIssueTracker>();

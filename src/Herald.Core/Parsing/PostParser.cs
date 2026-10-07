@@ -38,7 +38,6 @@ internal sealed partial class PostParser : IPostParser
     public PostParseResult Parse(string slug, string content)
     {
         ArgumentException.ThrowIfNullOrEmpty(slug);
-        ArgumentNullException.ThrowIfNull(content);
 
         var splitResult = FrontMatter.Split(content, out var frontMatter, out var body);
 
@@ -62,7 +61,7 @@ internal sealed partial class PostParser : IPostParser
 
         try
         {
-            document = __deserializer.Deserialize<PostDocument>(frontMatter);
+            document = __deserializer.Deserialize<PostDocument>(content[frontMatter]);
 
             if (document is null)
             {
@@ -70,7 +69,7 @@ internal sealed partial class PostParser : IPostParser
                 {
                     Slug = slug,
                     Status = PostStatus.Draft,
-                    Body = body
+                    Body = content[body]
                 });
             }
         }
@@ -124,7 +123,7 @@ internal sealed partial class PostParser : IPostParser
             Targets = document.Targets ?? [],
             Comments = comments,
             Results = results,
-            Body = body,
+            Body = content[body],
         });
     }
 
@@ -325,7 +324,7 @@ internal sealed partial class PostParser : IPostParser
     }
 
     private static Dictionary<string, CommentResult> ReadCommentResults(
-        Dictionary<string, CommentResultDocument>? documents,
+        SortedDictionary<string, CommentResultDocument>? documents,
         string target,
         List<string> errors)
     {

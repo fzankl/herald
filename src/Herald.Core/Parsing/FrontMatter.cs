@@ -12,13 +12,14 @@ internal static class FrontMatter
     internal const string Delimiter = "---";
 
     /// <summary>
-    /// Walks the file line by line over the raw text, so that only the front matter and the body are
-    /// ever allocated. A post file is a few kilobytes, and its body is most of that.
+    /// Walks the file line by line over the raw text and reports where the two parts sit, rather
+    /// than copying them out. A reader takes the substrings it needs; a write-back needs the
+    /// positions, because it puts the file back together around an untouched remainder.
     /// </summary>
-    internal static SplitResultType Split(string content, out string frontMatter, out string body)
+    internal static SplitResultType Split(string content, out Range frontMatter, out Range body)
     {
-        frontMatter = string.Empty;
-        body = content;
+        frontMatter = 0..0;
+        body = 0..content.Length;
 
         var span = content.AsSpan();
         var firstBreak = span.IndexOf('\n');
@@ -46,14 +47,28 @@ internal static class FrontMatter
                 continue;
             }
 
-            // The line break in front of the closing delimiter ends the last line of the front matter.
+            // The line break in front of the closing delimiter ends the last line of the front
+            // matter, and on a Windows file that break is two characters. Leaving the carriage
+            // return inside the range makes a write-back append after half a line break.
             var frontMatterEnd = cursor > start ? cursor - 1 : start;
-            frontMatter = span[start..frontMatterEnd].ToString();
+
+            if (frontMatterEnd > start && span[frontMatterEnd - 1] == '\r')
+            {
+                frontMatterEnd--;
+            }
+
+            frontMatter = start..frontMatterEnd;
 
             // What follows the closing delimiter is the body, less the blank line an author leaves.
-            body = lineBreak < 0
-                ? string.Empty
-                : span[(cursor + lineBreak + 1)..].TrimStart("\r\n").ToString();
+            var afterDelimiter = lineBreak < 0 ? span.Length : cursor + lineBreak + 1;
+            var bodyStart = afterDelimiter;
+
+            while (bodyStart < span.Length && span[bodyStart] is '\r' or '\n')
+            {
+                bodyStart++;
+            }
+
+            body = bodyStart..span.Length;
 
             return SplitResultType.Found;
         }

@@ -18,16 +18,22 @@ public sealed record RunReport
     /// </summary>
     public required IReadOnlyList<string> Warnings { get; init; }
 
-    public int Rejected => Posts.Count(post => post.Errors.Count > 0);
+    public int RejectedCount => Posts.Count(post => post.Errors.Count > 0);
 
     /// <summary>
     /// How many posts would be published now.
     /// The first number to read before a run goes live.
     /// </summary>
-    public int Due => Posts.Count(post => post.Due is PostDue.Due);
+    public int DueCount => Posts.Count(post => post.Due is PostDue.Due);
 
     /// <summary>
     /// How many posts herald leaves alone because their time passed too long ago.
     /// </summary>
-    public int Overdue => Posts.Count(post => post.Due is PostDue.Overdue);
+    public int OverdueCount => Posts.Count(post => post.Due is PostDue.Overdue);
+
+    /// <summary>
+    /// How many files a write-back would change beyond the results block. Anything but zero has to
+    /// be fixed before herald is allowed to commit.
+    /// </summary>
+    public int WriteBackWouldDamageCount => Posts.Count(post => post.WriteBackWouldDamage is true);
 }

@@ -1,5 +1,6 @@
 using Herald.Core.Content;
 using Herald.Core.Parsing;
+using Herald.Core.Writing;
 using Refit;
 
 namespace Herald.Core.Publishing;
@@ -11,17 +12,20 @@ internal sealed class PublishRun : IPublishRun
     private readonly IPostFileSelector _selector;
     private readonly IPostParser _parser;
     private readonly PublishSchedule _schedule;
+    private readonly IPostWriter _writer;
 
     public PublishRun(
         IContentRepository repository,
         IPostFileSelector selector,
         IPostParser parser,
-        PublishSchedule schedule)
+        PublishSchedule schedule,
+        IPostWriter writer)
     {
         _repository = repository;
         _selector = selector;
         _parser = parser;
         _schedule = schedule;
+        _writer = writer;
     }
 
     /// <inheritdoc />
@@ -80,6 +84,23 @@ internal sealed class PublishRun : IPublishRun
 
         var (due, targets) = _schedule.Evaluate(result.Post);
 
+        // The write-back is tried on every file of every run, and nothing is committed.
+        var written = _writer.Write(content, result.Post.Results);
+
+        if (!written.ChangesOnlyTheResults)
+        {
+            return new RunEntry
+            {
+                Slug = file.Slug,
+                Path = file.Path,
+                Status = result.Post.Status,
+                ScheduledAt = result.Post.ScheduledAt,
+                Targets = result.Post.Targets,
+                WriteBackWouldDamage = true,
+                Errors = ["herald would change this file beyond its own 'results' block and therefore leaves it alone. The fault is in herald, not in the file."],
+            };
+        }
+
         return new RunEntry
         {
             Slug = file.Slug,
@@ -89,6 +110,7 @@ internal sealed class PublishRun : IPublishRun
             Targets = result.Post.Targets,
             Due = due,
             DueTargets = targets,
+            WriteBackWouldDamage = false,
         };
     }
 }

@@ -35,7 +35,14 @@ public sealed record RunEntry
     public IReadOnlyList<string> DueTargets { get; init; } = [];
 
     /// <summary>
-    /// Why the file did not become a post. Empty when it did.
+    /// Whether a write-back of what was just read would change more of the file than the results
+    /// block. Null when the file was rejected before it got that far. True keeps the post from
+    /// becoming due, so that a file herald would damage is never written to.
+    /// </summary>
+    public bool? WriteBackWouldDamage { get; init; }
+
+    /// <summary>
+    /// Why herald does not act on this file. Empty when nothing is in the way.
     /// </summary>
     public IReadOnlyList<string> Errors { get; init; } = [];
 }

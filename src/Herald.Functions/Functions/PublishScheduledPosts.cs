@@ -27,9 +27,9 @@ public sealed class PublishScheduledPosts
         _logger.RunFinished(
             report.FilesInRepository,
             report.Posts.Count,
-            report.Due,
-            report.Overdue,
-            report.Rejected,
+            report.DueCount,
+            report.OverdueCount,
+            report.RejectedCount,
             report.Warnings.Count);
 
         foreach (var post in report.Posts.Where(post => post.Errors.Count > 0))

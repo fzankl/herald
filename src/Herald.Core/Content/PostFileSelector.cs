@@ -18,8 +18,6 @@ internal sealed class PostFileSelector : IPostFileSelector
     /// <inheritdoc />
     public PostFileSelection Select(IEnumerable<string> paths)
     {
-        ArgumentNullException.ThrowIfNull(paths);
-
         // Ordinal because git paths are case sensitive. The exclude sits in the same matcher as the
         // include, so a template is never read as a post, whatever the pattern looks like.
         var matcher = new Matcher(StringComparison.Ordinal);

@@ -16,5 +16,5 @@ internal sealed class TargetResultDocument
 
     public string? Hash { get; set; }
 
-    public Dictionary<string, CommentResultDocument>? Comments { get; set; }
+    public SortedDictionary<string, CommentResultDocument>? Comments { get; set; }
 }

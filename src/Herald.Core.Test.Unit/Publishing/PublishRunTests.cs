@@ -4,6 +4,7 @@ using Herald.Core.Content;
 using Herald.Core.Models;
 using Herald.Core.Parsing;
 using Herald.Core.Publishing;
+using Herald.Core.Writing;
 using Microsoft.Extensions.Options;
 using Refit;
 
@@ -53,7 +54,9 @@ public sealed class PublishRunTests
         post.Due.Should().Be(PostDue.Due);
         post.Targets.Should().Equal("linkedin");
         post.DueTargets.Should().Equal("linkedin");
-        report.Due.Should().Be(1);
+        report.DueCount.Should().Be(1);
+        post.WriteBackWouldDamage.Should().BeFalse();
+        report.WriteBackWouldDamageCount.Should().Be(0);
     }
 
     [Fact]
@@ -66,7 +69,7 @@ public sealed class PublishRunTests
 
         var report = await run.RunAsync(TestContext.Current.CancellationToken);
 
-        report.Rejected.Should().Be(1);
+        report.RejectedCount.Should().Be(1);
 
         var post = report.Posts.Should().ContainSingle().Subject;
         post.Status.Should().BeNull();
@@ -93,7 +96,31 @@ public sealed class PublishRunTests
             .Which.Errors.Should().ContainSingle().Which.Should().Contain("404");
     }
 
-    private static PublishRun Create(Dictionary<string, string> files, string? unreadable = null)
+    [Fact]
+    public async Task RunAsync___A_Write_Back_That_Would_Damage_The_File___Leaves_The_Post_Alone()
+    {
+        var run = Create(
+            new Dictionary<string, string> { ["blog/a/linkedin/2026-09-01-a-post.md"] = Approved },
+            writer: new DamagingWriter());
+
+        var report = await run.RunAsync(TestContext.Current.CancellationToken);
+
+        var post = report.Posts.Should().ContainSingle().Subject;
+        post.Due.Should().BeNull();
+        post.WriteBackWouldDamage.Should().BeTrue();
+        post.Errors.Should().ContainSingle().Which.Should().Contain("fault is in herald");
+        report.DueCount.Should().Be(0);
+        report.WriteBackWouldDamageCount.Should().Be(1);
+    }
+
+    // What the real writer reports when it would change more than its own block. That it detects
+    // the case is the business of WriteBackTests; that the run then leaves the post alone is this.
+    private sealed class DamagingWriter : IPostWriter
+    {
+        public WriteResult Write(string content, IReadOnlyDictionary<string, TargetResult> results) =>
+            new(content, ChangesOnlyTheResults: false);
+    }
+    private static PublishRun Create(Dictionary<string, string> files, string? unreadable = null, IPostWriter? writer = null)
     {
         var options = Options.Create(new ContentRepositoryOptions
         {
@@ -107,7 +134,8 @@ public sealed class PublishRunTests
             new FakeContentRepository(files, unreadable),
             new PostFileSelector(options),
             new PostParser(),
-            new PublishSchedule(new FixedTimeProvider(__now), Options.Create(new RunOptions { Mode = RunMode.Dry })));
+            new PublishSchedule(new FixedTimeProvider(__now), Options.Create(new RunOptions { Mode = RunMode.Dry })),
+            writer ?? new PostWriter());
     }
 
     private sealed class FakeContentRepository : IContentRepository
